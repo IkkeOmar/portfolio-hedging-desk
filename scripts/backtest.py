@@ -24,6 +24,7 @@ hedge has ZERO forward-return correlation by construction. See
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -55,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--horizon", type=int, default=21, help="forward-return horizon in days")
     parser.add_argument("--trials", type=int, default=1,
                         help="how many strategy variants were tried. Honesty: count them all.")
+    parser.add_argument("--json", action="store_true",
+                        help="print the evaluation payload as JSON on stdout, "
+                             "for a program to consume instead of a human to "
+                             "read. The report files are written either way.")
     args = parser.parse_args(argv)
 
     config = DeskConfig.from_yaml(args.config)
@@ -135,6 +140,13 @@ def main(argv: list[str] | None = None) -> int:
     write_json_report(out / "evaluation.json", payload)
     write_markdown_report(out / "evaluation.md", payload)
     write_equity_csv(out / "equity.csv", result)
+
+    if args.json:
+        # A machine consumer wants the payload, not a table. The report
+        # files are still written, so the dashboard and the claim audit
+        # read exactly the same run.
+        print(json.dumps(payload, indent=2, default=str))
+        return 0 if passed else 1
 
     s = payload["summary"]
     print(f"\n=== walk-forward backtest: {s['n_days']} days, {s['n_trades']} trades, "

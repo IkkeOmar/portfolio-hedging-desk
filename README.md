@@ -408,8 +408,44 @@ The point of publishing the numbers is that you can check them.
   code, and how each one was caught.
 - [`notes/2026-10-24-verified-citations.md`](notes/2026-10-24-verified-citations.md)
   — every citation, resolved, with the ones we found that do not exist.
-- [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md) — the bugs that were in this
-  code, and how each one was caught.
+
+---
+
+## The other half of this project
+
+This repository is the **risk side** of a two-part project: is there
+anything to hedge, does the timing signal exist, did the reduction pay for
+itself, and does it hold up out of sample?
+
+The **research side** lives in
+[`hedging-agent`](https://github.com/IkkeOmar/hedging-agent): it drafts
+candidate hedge strategies, searches for the best of many, and refuses to
+promote any of them that does not clear a fail-closed gate. Right now it
+rejects every universe it tests, and it publishes which checks failed.
+
+Together they answer the two questions a hedging claim needs: *is there
+something to hedge* (this repo) and *did we find a strategy that actually
+works* (the other one).
+
+## Where to take this next
+
+This is a **starting point**, not a finished product. The desk is finished
+as an *instrument* — five seats, a journal, one veto, four gates — and it
+is not finished as a research programme. There is one data source, one
+universe, and one family of thresholds. The seams are real, and each one
+is a place to change the code:
+
+| Seam | Where | What you would do |
+|---|---|---|
+| **The seat protocol** | `src/desk.py` | Add a seat, or replace one. The protocol is: propose, then a single Risk signature, or nothing trades. |
+| **The gate thresholds** | `src/evaluation/gates.py` | Change what counts as a hedge worth holding. Every threshold is a measured quantity, not a round number. |
+| **The data source** | `src/data/` | Point it at your own prices. `csv_source.py` reads a CSV; `synthetic.py` makes the fixture. |
+| **The benchmark set** | `src/evaluation/metrics.py` | Add the simple alternative your strategy has to beat. |
+
+What you may **not** do with it: turn it into a signal generator, weaken a
+gate threshold to make something pass, or present any number here as
+advice about what to hold. The output is a research result, not a
+position.
 
 ## Licence
 
