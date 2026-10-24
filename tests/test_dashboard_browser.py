@@ -248,7 +248,9 @@ def test_a_typed_key_is_never_rendered(page):
     unavoidable. What must not happen is the key being rendered as text
     anywhere, or ending up anywhere but that input.
     """
-    secret = "sk-browser-test-9f3a2b"
+    # A value that cannot be mistaken for a real credential: no "sk-"
+    # prefix, no provider format. A scanner should not flag this file.
+    secret = "dummy-browser-key-not-a-real-secret"
     field = page.locator('input[type="password"]').first
     field.fill(secret)
     page.wait_for_timeout(2000)
@@ -285,7 +287,7 @@ def test_the_connection_test_reports_a_dead_endpoint(page):
 
     # A dummy key, so the test never uses a real one from the machine's
     # .env and never sends anything to a third party.
-    page.locator('input[type="password"]').first.fill("sk-not-a-real-key")
+    page.locator('input[type="password"]').first.fill("dummy-key-not-a-real-secret")
     page.wait_for_timeout(1500)
 
     page.get_by_role("button", name="Test", exact=True).click()

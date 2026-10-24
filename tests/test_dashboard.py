@@ -209,7 +209,9 @@ def test_typing_a_key_never_echoes_it(fresh):
     guarantee: if the value ever reached a markdown block, a caption or
     an error message, it would be in the page source.
     """
-    secret = "sk-test-abcdef123456"
+    # A value that cannot be mistaken for a real credential: no "sk-"
+    # prefix, no provider format. A scanner should not flag this file.
+    secret = "dummy-key-not-a-real-secret"
     fresh.sidebar.text_input(key="w_api_key").set_value(secret).run()
     _no_exception(fresh)
     assert secret not in _body(fresh), "the API key leaked into the page"
@@ -227,7 +229,7 @@ def test_a_failed_connection_test_reports_an_error_instead_of_raising(fresh):
     fresh.sidebar.text_input(key="w_custom_base_url").set_value(
         "http://127.0.0.1:9/v1").run()
     fresh.sidebar.text_input(key="w_custom_model").set_value("test-model").run()
-    fresh.sidebar.text_input(key="w_api_key").set_value("sk-not-a-real-key").run()
+    fresh.sidebar.text_input(key="w_api_key").set_value("dummy-key-not-a-real-secret").run()
     fresh.sidebar.button(key="w_test").click().run()
     _no_exception(fresh)
     errors = [e.value for e in fresh.error]

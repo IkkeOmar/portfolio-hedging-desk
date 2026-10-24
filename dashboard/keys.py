@@ -202,7 +202,10 @@ def judge_from_env(provider: dict[str, str]) -> Any:
     if not key:
         return None
     return LLMJudge(
-        model_name=provider.get("api_key_env", "llm").lower(),
+        # model_name is the label the journal records as ``judge_model``.
+        # The model name is what a reader wants to see there, not the name
+        # of the environment variable.
+        model_name=provider.get("model") or provider.get("api_key_env", "llm"),
         base_url=provider["base_url"],
         model=provider["model"],
         api_key_env=provider["api_key_env"],
