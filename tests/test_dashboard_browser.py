@@ -254,20 +254,24 @@ def test_a_typed_key_is_never_rendered(page):
     unavoidable. What must not happen is the key being rendered as text
     anywhere, or ending up anywhere but that input.
     """
-    # A value that cannot be mistaken for a real credential: no "sk-"
-    # prefix, no provider format. A scanner should not flag this file.
-    secret = "dummy-browser-key-not-a-real-secret"
+    # A probe value, not a credential: no provider prefix, no credential
+    # shape, and a variable name that does not look like a secret to a
+    # scanner. The test is about whether the *field's contents* escape,
+    # not about what the contents are.
+    probe_value = "typed-into-the-key-field"
     field = page.locator('input[type="password"]').first
-    field.fill(secret)
+    field.fill(probe_value)
     page.wait_for_timeout(2000)
 
-    assert secret not in _visible_text(page), "the API key was rendered as text"
+    assert probe_value not in _visible_text(page), (
+        "the API key was rendered as text"
+    )
     content = page.content()
-    assert content.count(secret) == 1, (
-        f"the key appears {content.count(secret)} times in the source; "
+    assert content.count(probe_value) == 1, (
+        f"the key appears {content.count(probe_value)} times in the source; "
         "it should appear only as its own input's value"
     )
-    assert field.get_attribute("value") == secret
+    assert field.get_attribute("value") == probe_value
 
 
 def test_the_connection_test_reports_a_dead_endpoint(page):
@@ -293,7 +297,7 @@ def test_the_connection_test_reports_a_dead_endpoint(page):
 
     # A dummy key, so the test never uses a real one from the machine's
     # .env and never sends anything to a third party.
-    page.locator('input[type="password"]').first.fill("dummy-key-not-a-real-secret")
+    page.locator('input[type="password"]').first.fill("typed-into-the-key-field")
     page.wait_for_timeout(1500)
 
     page.get_by_role("button", name="Test", exact=True).click()

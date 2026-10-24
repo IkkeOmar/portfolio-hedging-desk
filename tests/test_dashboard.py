@@ -224,12 +224,14 @@ def test_typing_a_key_never_echoes_it(fresh):
     guarantee: if the value ever reached a markdown block, a caption or
     an error message, it would be in the page source.
     """
-    # A value that cannot be mistaken for a real credential: no "sk-"
-    # prefix, no provider format. A scanner should not flag this file.
-    secret = "dummy-key-not-a-real-secret"
-    fresh.sidebar.text_input(key="w_api_key").set_value(secret).run()
+    # A probe value, not a credential: no provider prefix, no credential
+    # shape, and a variable name that does not look like a secret to a
+    # scanner. The test is about whether the *field's contents* escape,
+    # not about what the contents are.
+    probe_value = "typed-into-the-key-field"
+    fresh.sidebar.text_input(key="w_api_key").set_value(probe_value).run()
     _no_exception(fresh)
-    assert secret not in _body(fresh), "the API key leaked into the page"
+    assert probe_value not in _body(fresh), "the API key leaked into the page"
 
 
 def test_a_failed_connection_test_reports_an_error_instead_of_raising(fresh):
