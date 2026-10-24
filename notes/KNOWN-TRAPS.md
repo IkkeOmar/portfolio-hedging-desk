@@ -399,3 +399,48 @@ the framework's chrome with CSS (`[data-testid="stAppDeployButton"]`).
 Note that `st.set_page_config(menu_items=...)` accepts exactly three
 keys — `"Get help"`, `"Report a Bug"` and `"About"` — and **no** deploy
 key, so the Deploy button can only be hidden, not configured away.
+
+---
+
+## 24. A function defined twice, and the good one was dead
+
+`scripts/audit_claims.py` defined `collect_test_count()` **twice**, 148
+lines apart. The second definition shadowed the first, and the second was
+the weaker one: the first tried `sys.executable` and then `python` on
+`PATH`, because the interpreter on `PATH` is not always the one the
+project runs under. The second tried only `sys.executable`.
+
+Python does not warn about this. The module imports, every function is
+"defined", the tests pass, and the more robust implementation is simply
+never called.
+
+**The rule:** when two definitions of the same name exist in a file, the
+later one wins silently, and the earlier one is dead code that still
+looks alive. `grep -n "^def " file.py | awk '{print $2}' | sort | uniq -d`
+finds it in one command. A function that is defined but never called is
+not a safety net.
+
+## 25. A number that meant one thing locally and another in CI
+
+The documentation claimed 85 tests. The claim audit checked that number
+against `pytest --collect-only`. The dashboard tests imported Streamlit
+at **module** level with `pytest.importorskip`, so when Streamlit was
+missing, pytest skipped the whole *file* — and a skipped file contributes
+nothing to the collected count. The same repository therefore had 85 tests
+where the extra was installed and 54 where it was not.
+
+The CI job that was supposed to enforce the number was the core job, which
+does not install the extra. So the audit was comparing 85 against 54 and
+failing, in the one place the number mattered.
+
+The fix was not to weaken the check. It was to stop the count from
+depending on the environment: the optional imports moved **inside the
+fixtures**, so the file is always collected and the tests skip at run
+time. The collection is now 85 with Streamlit, Playwright and Plotly
+all blocked, which is how it was verified.
+
+**The rule:** a number in the documentation must have exactly one
+meaning in every environment the reader might be in. If a check's result
+depends on which optional packages happen to be installed, the check is
+measuring the environment, not the repository — and the fix is to make the
+measurement independent, not to loosen the assertion.

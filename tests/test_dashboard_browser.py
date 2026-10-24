@@ -48,11 +48,6 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 
-playwright_api = pytest.importorskip(
-    "playwright.sync_api", reason="playwright is not installed"
-)
-sync_playwright = playwright_api.sync_playwright
-
 APP = REPO / "dashboard" / "app.py"
 TAB_NAMES = ["Overview", "Risk", "Desk", "Vetoes & trades", "Walk-forward",
              "Settings"]
@@ -105,7 +100,18 @@ def server():
 
 @pytest.fixture(scope="module")
 def page(server):
-    """A chromium page with the dashboard loaded and rendered."""
+    """A chromium page with the dashboard loaded and rendered.
+
+    Playwright is imported inside the fixture rather than at module level.
+    A module-level ``importorskip`` makes pytest skip the whole file when
+    Playwright is missing, so the file would contribute nothing to the
+    collected count -- which made the repository's test count depend on
+    which optional extras were installed. Skipping inside the fixture
+    keeps the collection complete everywhere.
+    """
+    sync_playwright = pytest.importorskip(
+        "playwright.sync_api", reason="playwright is not installed"
+    ).sync_playwright
     with sync_playwright() as pw:
         try:
             browser = pw.chromium.launch(headless=True)

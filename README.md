@@ -345,7 +345,9 @@ The point of publishing the numbers is that you can check them.
 
 - Every figure in this README comes from `reports/evaluation.json`, produced
   by `python scripts/backtest.py`. Re-run it and compare.
-- **85 tests**, each cross-validated against an *independent* library or
+- **85 tests** (54 run on the base install; 31 more need the optional
+  dashboard extra and skip without it), each cross-validated against an
+  *independent* library or
   solver rather than a second implementation of our own code: Deflated
   Sharpe against `skfolio`, probability of backtest overfitting against
   `purgedcv`, Newey-West t-statistics against `statsmodels`, covariance

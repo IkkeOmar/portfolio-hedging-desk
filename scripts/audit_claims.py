@@ -199,9 +199,17 @@ def harvest_desk_run() -> dict[str, list[str]]:
 def collect_test_count() -> int | None:
     """How many tests does pytest collect?
 
-    Asked of pytest itself rather than counted by hand. Tries the running
-    interpreter first, then `python` on PATH, because the interpreter on
-    PATH is not always the one this project runs under.
+    Asked of pytest itself rather than counted by hand, because a test
+    count written in a README is exactly the kind of number that goes
+    stale.
+
+    This count is the same in every environment, and that is deliberate.
+    The dashboard tests used to import their optional dependency at module
+    level, which made pytest skip the whole *file* when Streamlit was
+    missing -- so the count depended on which extras were installed, and
+    the CI job without the extras checked the documentation against a
+    different number than the one it claimed. The tests now import
+    lazily, inside the fixture, so the file is always collected.
     """
     for exe in (sys.executable, "python"):
         try:
@@ -344,32 +352,6 @@ def check_numbers(texts: dict[str, str], known: dict[str, list[str]]) -> tuple[l
     return problems, checked
 
 
-def collect_test_count() -> int | None:
-    """How many tests does pytest actually collect?
-
-    Asked of pytest itself rather than counted by hand, because a test count
-    written in a README is exactly the kind of number that goes stale.
-    """
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests/", "--collect-only", "-q"],
-            cwd=REPO, capture_output=True, text=True, timeout=300,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    out = proc.stdout or ""
-    m = re.search(r"(\d+)\s+tests? collected", out)
-    if m:
-        return int(m.group(1))
-    # Fall back to summing the per-file counts pytest prints in -q mode.
-    total = 0
-    for line in out.splitlines():
-        m = re.match(r"^tests/[^:]+\.py:\s*(\d+)\s*$", line.strip())
-        if m:
-            total += int(m.group(1))
-    return total or None
-
-
 def check_test_count(texts: dict[str, str], actual: int | None) -> list[str]:
     """Every "N tests" claim must equal what pytest collects.
 
@@ -388,7 +370,8 @@ def check_test_count(texts: dict[str, str], actual: int | None) -> list[str]:
             if claimed != actual:
                 snippet = text[max(0, m.start() - 60):m.start() + 60].replace("\n", " ")
                 problems.append(
-                    f"{label}: claims {claimed} test(s) but pytest collects {actual}"
+                    f"{label}: claims {claimed} test(s) but pytest collects "
+                    f"{actual}"
                     f"  ...{snippet.strip()}..."
                 )
     return problems

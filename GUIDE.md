@@ -62,7 +62,10 @@ python -m pytest tests/ -q
 - The backtest prints a walk-forward run over **3915 days** with **121
   trades**, **172 proposals** and **51 vetoes**, and writes
   `reports/evaluation.json` and `reports/evaluation.md`.
-- The tests print **85 passed**.
+- The tests print **85 passed** on a full install. On the base
+  install, 54 run and the 31 dashboard tests skip -- the count is the
+  same either way, because the dashboard tests import their optional
+  dependency lazily rather than skipping the whole file.
 
 **The result you will not like.** Gate 1 passes (R² 58.5% against a 25%
 threshold, implying at most a 35.6% volatility reduction). Gate 2 **fails**:

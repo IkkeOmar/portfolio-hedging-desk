@@ -32,28 +32,43 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-AppTest = pytest.importorskip(
-    "streamlit.testing.v1", reason="streamlit is an optional extra"
-).AppTest
-
 APP = REPO / "dashboard" / "app.py"
 REPORT = REPO / "reports" / "evaluation.json"
 
 
 @pytest.fixture(scope="module")
-def rendered():
+def app_test():
+    """Streamlit's test harness, imported lazily.
+
+    The import happens here rather than at module level on purpose. A
+    module-level ``importorskip`` makes pytest skip the whole *file* when
+    Streamlit is missing, and a skipped file contributes nothing to the
+    collected count. That made "how many tests does this repository have"
+    depend on which optional extras were installed -- which broke the
+    claim audit in exactly the CI job that was meant to enforce it.
+
+    Skipping inside the fixture keeps the collection complete in every
+    environment, so the count is a property of the repository.
+    """
+    return pytest.importorskip(
+        "streamlit.testing.v1", reason="streamlit is an optional extra"
+    ).AppTest
+
+
+@pytest.fixture(scope="module")
+def rendered(app_test):
     """The app, rendered once, for the read-only assertions."""
     if not APP.exists():
         pytest.skip(f"no dashboard at {APP}")
-    at = AppTest.from_file(str(APP), default_timeout=300)
+    at = app_test.from_file(str(APP), default_timeout=300)
     at.run()
     return at
 
 
 @pytest.fixture
-def fresh():
+def fresh(app_test):
     """A brand-new instance, for tests that change widget state."""
-    at = AppTest.from_file(str(APP), default_timeout=300)
+    at = app_test.from_file(str(APP), default_timeout=300)
     at.run()
     return at
 
