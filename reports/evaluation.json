@@ -2,7 +2,7 @@
   "verdict": "fail",
   "short_circuited_at": "regime_information",
   "config": {
-    "source": "examples\\holdings.example.yaml",
+    "source": "examples/holdings.example.yaml",
     "data_source": "synthetic",
     "seed": 20261024,
     "benchmarks": "SPY",

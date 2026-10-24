@@ -444,3 +444,44 @@ meaning in every environment the reader might be in. If a check's result
 depends on which optional packages happen to be installed, the check is
 measuring the environment, not the repository — and the fix is to make the
 measurement independent, not to loosen the assertion.
+
+---
+
+## 26. A report that recorded a path with the platform's separator
+
+The evaluation report records the configuration file it was run with. On
+Windows that was `examples\holdings.example.yaml`; on Linux it is
+`examples/holdings.example.yaml`. The committed report was generated on
+Windows, so on CI the regenerated report did not match it -- and the
+dashboard's own reproducibility test failed on a field that has nothing to
+do with the desk.
+
+The failure was invisible in the assertion: pytest prints a truncated
+dictionary diff, so all it showed was `{'verdict': '...51, ...}, ...} !=
+{'verdict': '...51, ...}, ...}`. The actual difference was a backslash.
+
+**The rule:** a published artefact must be identical on every platform.
+Paths recorded in a report are normalised to forward slashes, which
+Windows accepts. And a reproducibility test must compare *structurally* --
+exactly for strings, counts and verdicts, with a stated relative tolerance
+for floats -- and must name the field and the size of the gap when it
+fails. A truncated dictionary diff is not a diagnosis.
+
+Why floats need a tolerance: numpy's pairwise summation blocks differently
+across platforms and versions, so a sum of 3915 doubles is not
+bit-identical everywhere. "Reproducible" has to mean reproducible, not
+reproducible on one machine.
+
+## 27. A fixture that raised instead of skipping
+
+The dashboard tests are optional: the core install has no Streamlit. The
+browser test's `server` fixture started `streamlit run` as a subprocess,
+and when the module was missing the subprocess exited 1, so the fixture
+raised `RuntimeError`. A fixture that raises produces a pytest **ERROR**,
+and an ERROR fails the build -- so the core CI job failed on a missing
+optional dependency, which is not a failure of anything.
+
+**The rule:** an optional dependency that is not installed must produce a
+*skip*, never an error. The distinction that matters is between "the
+extra is not here" (skip) and "the extra is here and the server still
+died" (raise) -- the second is a real defect and must fail the build.

@@ -23,6 +23,7 @@ for real, so the skip never hides a broken dashboard in CI.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -34,6 +35,13 @@ sys.path.insert(0, str(REPO))
 
 APP = REPO / "dashboard" / "app.py"
 REPORT = REPO / "reports" / "evaluation.json"
+
+
+# The dashboard needs both of these, and neither is in the core install.
+# A test that raises because an optional dependency is missing is a
+# pytest ERROR, and an ERROR fails the build -- so the whole dashboard
+# suite must SKIP when the extra is absent.
+DASHBOARD_EXTRA = ("streamlit", "plotly")
 
 
 @pytest.fixture(scope="module")
@@ -50,6 +58,9 @@ def app_test():
     Skipping inside the fixture keeps the collection complete in every
     environment, so the count is a property of the repository.
     """
+    for package in DASHBOARD_EXTRA:
+        if importlib.util.find_spec(package) is None:
+            pytest.skip(f"{package} is an optional extra")
     return pytest.importorskip(
         "streamlit.testing.v1", reason="streamlit is an optional extra"
     ).AppTest
@@ -253,23 +264,88 @@ def test_a_failed_connection_test_reports_an_error_instead_of_raising(fresh):
     assert errors, "a failed connection test must report an error"
 
 
+def _differences(a, b, path="", out=None):
+    """Every difference between two JSON structures, with its magnitude.
+
+    Strings, booleans, integers and nulls must match exactly. Floats are
+    compared with a relative tolerance, because a sum of 3915 doubles is
+    not bit-identical between platforms and numpy versions -- numpy's
+    pairwise summation blocks differently -- and a report that claims to
+    be reproducible across platforms has to mean "reproducible", not
+    "reproducible on one machine".
+
+    The differences are returned rather than asserted inside, so a
+    failure can name the field and the size of the gap. A truncated
+    dictionary diff tells you nothing you can act on.
+    """
+    if out is None:
+        out = []
+    if isinstance(a, dict) and isinstance(b, dict):
+        for key in sorted(set(a) | set(b)):
+            child = f"{path}.{key}" if path else key
+            if key not in a:
+                out.append((child, "<missing>", b[key], None))
+            elif key not in b:
+                out.append((child, a[key], "<missing>", None))
+            else:
+                _differences(a[key], b[key], child, out)
+    elif isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            out.append((path, f"len {len(a)}", f"len {len(b)}", None))
+        else:
+            for index, (x, y) in enumerate(zip(a, b)):
+                _differences(x, y, f"{path}[{index}]", out)
+    elif isinstance(a, bool) or isinstance(b, bool) or a is None or b is None:
+        if a != b:
+            out.append((path, a, b, None))
+    elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        if a != b:
+            scale = max(abs(a), abs(b), 1e-300)
+            out.append((path, a, b, abs(a - b) / scale))
+    elif a != b:
+        out.append((path, a, b, None))
+    return out
+
+
 def test_running_the_backtest_reproduces_the_committed_report(fresh):
     """The button in the sidebar must regenerate the shipped report.
 
     This is the strongest reproducibility claim the repository makes: the
     numbers a reader sees in the README are the numbers the UI produces.
+
+    Floats are compared with a relative tolerance of 1e-9 and everything
+    else exactly. A failure names the field and the size of the gap, so
+    a real regression is distinguishable from the last-bit noise of a
+    floating-point sum on a different platform.
     """
-    before = REPORT.read_bytes()
+    before = json.loads(REPORT.read_text(encoding="utf-8"))
     fresh.sidebar.button(key="w_backtest").click().run()
     _no_exception(fresh)
-    after = REPORT.read_bytes()
-    assert json.loads(before) == json.loads(after), (
+    after = json.loads(REPORT.read_text(encoding="utf-8"))
+
+    differences = _differences(before, after)
+    exact = [d for d in differences if d[3] is None]
+    floating = [d for d in differences if d[3] is not None]
+
+    assert not exact, (
         "the backtest run from the dashboard did not reproduce the "
-        "committed evaluation report"
+        f"committed evaluation report. {len(exact)} field(s) differ "
+        f"exactly:\n"
+        + "\n".join(f"    {p}: committed {x!r}, regenerated {y!r}"
+                     for p, x, y, _ in exact[:20])
+    )
+
+    worst = max((d[3] for d in floating), default=0.0)
+    assert worst <= 1e-9, (
+        f"{len(floating)} float field(s) differ, worst relative gap "
+        f"{worst:.3e}, above the 1e-9 tolerance:\n"
+        + "\n".join(f"    {p}: committed {x!r}, regenerated {y!r} "
+                     f"(relative {r:.3e})" for p, x, y, r in
+                     sorted(floating, key=lambda d: -d[3])[:20])
     )
 
 # ------------------------------------------------------------- the charts
-def test_every_chart_actually_plots_something():
+def test_every_chart_actually_plots_something(app_test):
     """A chart with no data renders as an empty grid, and nobody notices.
 
     That is not hypothetical: the dial chart used to be exactly that. The
@@ -318,7 +394,7 @@ def test_every_chart_actually_plots_something():
         )
 
 
-def test_the_dial_chart_uses_the_decision_days():
+def test_the_dial_chart_uses_the_decision_days(app_test):
     """The dial is monthly. It must be plotted on its own dates."""
     from dashboard import charts, data
 

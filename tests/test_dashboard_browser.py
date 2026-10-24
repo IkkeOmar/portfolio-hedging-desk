@@ -38,6 +38,7 @@ dashboard job installs both, so the skip never hides a broken dashboard.
 
 from __future__ import annotations
 
+import importlib.util
 import socket
 import subprocess
 import sys
@@ -61,7 +62,18 @@ def _free_port() -> int:
 
 @pytest.fixture(scope="module")
 def server():
-    """A real Streamlit server, on a port nobody else is using."""
+    """A real Streamlit server, on a port nobody else is using.
+
+    If Streamlit is not installed, this **skips**. It does not raise: a
+    fixture that raises produces a pytest ERROR, which fails the build,
+    and an optional dependency that is not installed is not a failure.
+    The distinction that matters is between "the optional extra is not
+    here" (skip) and "the extra is here and the server still died"
+    (raise) -- the second is a real defect and must fail the build.
+    """
+    for package in ("streamlit", "plotly"):
+        if importlib.util.find_spec(package) is None:
+            pytest.skip(f"{package} is an optional extra")
     port = _free_port()
     command = [
         sys.executable, "-m", "streamlit", "run", str(APP),

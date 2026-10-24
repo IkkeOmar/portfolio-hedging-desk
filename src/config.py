@@ -166,6 +166,22 @@ class DataConfig:
             )
 
 
+def _portable_path(path: Path) -> str:
+    """A path recorded the same way on every platform.
+
+    The evaluation report records the configuration file it was run with,
+    and a report that says ``examples\\holdings.example.yaml`` on Windows
+    and ``examples/holdings.example.yaml`` on Linux is not reproducible
+    across platforms: the committed report can only ever match one of
+    them, and the claim audit then fails in CI for a reason that has
+    nothing to do with the desk.
+
+    Windows accepts forward slashes in a path, so one spelling works
+    everywhere.
+    """
+    return path.as_posix()
+
+
 @dataclass(frozen=True)
 class DeskConfig:
     """The whole configuration, validated."""
@@ -189,7 +205,7 @@ class DeskConfig:
             raise ConfigError(f"could not parse YAML at {path}: {exc}") from exc
         if not isinstance(raw, dict):
             raise ConfigError(f"config at {path} must be a YAML mapping, got {type(raw).__name__}")
-        return cls.from_dict(raw, source_path=str(path))
+        return cls.from_dict(raw, source_path=_portable_path(path))
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any], source_path: str | None = None) -> "DeskConfig":
