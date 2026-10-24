@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Your portfolio. Edit this file. Nothing else needs to change to run the desk.
+#
+# "shares" is the number of units you hold. "cost_basis" is optional and is
+# only used for reporting, never for a trading decision.
+# ---------------------------------------------------------------------------
+portfolio:
+  account_id: example
+  base_currency: USD
+  benchmark: SPY          # the market the hedge is measured against
+  holdings:
+    - symbol: AAPL
+      shares: 100
+    - symbol: MSFT
+      shares: 60
+    - symbol: NVDA
+      shares: 40
+
+hedging:
+  # Instrument used to neutralise risk. One symbol, on purpose: complexity here
+  # buys you nothing you can explain.
+  hedge_instrument: SPY
+  # Trailing window used to estimate how each holding moves with the market.
+  # 252 trading days is one year.
+  lookback_days: 252
+  # Confidence weight for shrinking an estimated beta toward zero. Bigger
+  # number = more shrinkage = more conservative hedge. See docs/METHODOLOGY.md.
+  shrinkage_k: 60
+  # Maximum share of portfolio value we are allowed to put into hedge legs.
+  max_hedge_pct_equity: 0.60
+  # How often to re-measure and re-trade.
+  rebalance: monthly      # daily | weekly | monthly
+
+risk:
+  # The Risk seat refuses any order that breaks these. It has the final word.
+  max_gross_hedge_pct: 1.0
+  risk_per_trade_pct: 0.02     # 2% of equity per hedge leg
+  min_reward_to_risk: 1.5      # do not take a hedge that costs more than it saves
+  max_legs: 5
+
+costs:
+  # Honest numbers. If your broker is more expensive, raise these and watch
+  # the edge shrink. That is the point of modelling them.
+  fee_bps_per_side: 2.0
+  slippage_bps_per_side: 1.0
+  spread_bps_per_side: 0.5
+
+data:
+  # "synthetic" = bundled deterministic dataset, no network needed.
+  # "yahoo"     = live-ish end-of-day prices via yfinance.
+  # "csv"       = your own price file. Needs `path` below, and the file's
+  #               first column must be a date.
+  source: synthetic
+  seed: 20261024
+  # path: examples/prices_sample.csv

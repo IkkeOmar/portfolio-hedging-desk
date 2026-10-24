@@ -1,0 +1,29 @@
+portfolio:
+  account_id: example
+  base_currency: USD
+  benchmark: SPY
+  holdings:
+  - symbol: AAPL
+    shares: 100
+  - symbol: MSFT
+    shares: 60
+  - symbol: NVDA
+    shares: 40
+hedging:
+  hedge_instrument: SPY
+  lookback_days: 252
+  shrinkage_k: 60
+  max_hedge_pct_equity: 0.6
+  rebalance: monthly
+risk:
+  max_gross_hedge_pct: 1.0
+  risk_per_trade_pct: 0.02
+  min_reward_to_risk: 1.5
+  max_legs: 5
+costs:
+  fee_bps_per_side: 2.0
+  slippage_bps_per_side: 1.0
+  spread_bps_per_side: 0.5
+data:
+  source: csv
+  path: examples/prices_sample.csv

@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portfolio-hedging-desk"
+version = "0.2.0"
+description = "An auditable, self-hosted portfolio hedging agent. Five seats, a journal you can read, and a methodology you can check."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "portfolio-hedging-desk contributors" }]
+keywords = ["hedging", "risk", "backtesting", "walk-forward", "portfolio"]
+classifiers = [
+  "Intended Audience :: Education",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Programming Language :: Python :: 3",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scipy>=1.10",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+market-data = ["yfinance>=0.2.40"]
+plots = ["matplotlib>=3.7"]
+# The runtime `dependencies` above stay deliberately lean: the evaluation
+# libraries are imported lazily inside the functions that use them, so the
+# core package imports with numpy/pandas/scipy/pyyaml alone. The test suite
+# exercises those functions, so `dev` needs all of them.
+# Floors are the versions verified against Python 3.11 and 3.12.
+dev = [
+  "pytest>=7.4",
+  "skfolio>=1.9.0",
+  "purgedcv>=0.1.0",
+  "statsmodels>=0.15.0",
+  "scikit-learn>=1.6.0",
+  "cvxpy>=1.5.3",
+]
+
+[project.scripts]
+hedging-desk = "src.desk:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

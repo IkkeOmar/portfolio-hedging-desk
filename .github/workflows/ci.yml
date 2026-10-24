@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  # Lets anyone re-run the suite on demand from the Actions tab, without
+  # pushing a commit. Useful for a public repository where a reader wants
+  # to see the result on their own fork.
+  workflow_dispatch:
+
+# The workflow only needs to read the repository.
+permissions:
+  contents: read
+
+# A new push to the same ref supersedes the run in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Report every version's result, even if one of them fails.
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    env:
+      # Journals and reports go to the runner's scratch directory, so a CI run
+      # never leaves untracked files behind in the checkout.
+      #
+      # NOTE: this is the runner's default environment variable, not the
+      # `runner` context. The `runner` context is NOT available in
+      # `jobs.<job_id>.env` (only in `jobs.<job_id>.steps.*`), and using it
+      # here makes GitHub reject the whole workflow at validation time: the
+      # run is created, concludes instantly, and no job ever starts.
+      CI_ARTIFACTS: $RUNNER_TEMP/hedge-ci
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # requirements.txt is the complete "everything you need to run the
+          # tests" file for this repo, so it is the single source of truth.
+          python -m pip install -r requirements.txt
+
+      - name: Run the test suite
+        run: python -m pytest tests/ -q
+
+      - name: Run the desk entry point
+        # The desk runs on the bundled synthetic dataset: no API key, no
+        # network, no broker account.
+        run: |
+          python scripts/run_desk.py \
+            --config examples/holdings.example.yaml \
+            --journal "$CI_ARTIFACTS/journal-desk"
+
+      - name: Run the backtest entry point
+        # scripts/backtest.py exits 1 when a hedging gate fails. That is BY
+        # DESIGN: the gates legitimately fail on the synthetic fixture
+        # (gate 2, Newey-West HAC t = 0.51 < 1.96) and the report is still
+        # written. A non-zero exit here is not a build failure, so this step
+        # is allowed to fail; the next step asserts the reports exist.
+        continue-on-error: true
+        run: |
+          python scripts/backtest.py \
+            --config examples/holdings.example.yaml \
+            --journal "$CI_ARTIFACTS/journal-backtest" \
+            --out "$CI_ARTIFACTS/reports"
+
+      - name: Audit the documented claims
+        # The claim audit runs the desk, compares every number in the
+        # documentation against a live run, checks every referenced path
+        # against the filesystem, and checks every test count against what
+        # pytest collects. It runs here against the report this job just
+        # produced, so a number that drifts out of the documentation fails
+        # the build instead of shipping.
+        #
+        # Only on one matrix entry: the audit is a property of the
+        # repository, not of an interpreter, and running it twice just
+        # doubles the wall clock.
+        if: matrix.python-version == '3.11'
+        run: python scripts/audit_claims.py --report "$CI_ARTIFACTS/reports/evaluation.json"
+
+      - name: Assert the backtest reports were written
+        # The proof that the entry point really ran end to end: the report is
+        # written whether the gates pass or fail.
+        run: |
+          test -f "$CI_ARTIFACTS/reports/evaluation.json"
+          test -f "$CI_ARTIFACTS/reports/evaluation.md"
+          test -s "$CI_ARTIFACTS/reports/evaluation.json"
+          test -s "$CI_ARTIFACTS/reports/evaluation.md"
+          python -c "import json,sys; d=json.load(open(sys.argv[1])); assert 'gates' in d and 'verdict' in d, d.keys(); print('verdict:', d['verdict'], '| short_circuited_at:', d.get('short_circuited_at'))" "$CI_ARTIFACTS/reports/evaluation.json"
+          echo "--- reports written ---"
+          ls -l "$CI_ARTIFACTS/reports"

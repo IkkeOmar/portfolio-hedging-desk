@@ -1,0 +1,34 @@
+# Core (needed for everything)
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+PyYAML>=6.0
+
+# Market data. Optional: the repo runs fully on the bundled synthetic dataset.
+yfinance>=0.2.40
+
+# Figures
+matplotlib>=3.7
+
+# Tests
+pytest>=7.4
+
+# Cross-validation / reference implementations used by the test suite.
+#
+# The core package imports these LAZILY (inside the functions that use them),
+# so the runtime dependency set stays small. The tests exercise those
+# functions, so a dev checkout needs all of them installed:
+#
+#   skfolio       -> skfolio.measures.deflated_sharpe_ratio, expected_max_sharpe_ratio
+#   purgedcv      -> probability_of_backtest_overfitting, effective_n_trials,
+#                    min_track_record_length
+#   statsmodels   -> OLS(cov_type="HAC") for the Newey-West t-statistic
+#   scikit-learn  -> LedoitWolf shrinkage covariance
+#   cvxpy         -> independent convex solver used to check the hedge ratio
+#
+# Floors are the versions verified against Python 3.11 and 3.12.
+skfolio>=1.9.0
+purgedcv>=0.1.0
+statsmodels>=0.15.0
+scikit-learn>=1.6.0
+cvxpy>=1.5.3

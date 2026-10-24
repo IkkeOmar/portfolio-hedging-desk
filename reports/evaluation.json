@@ -1,0 +1,1588 @@
+{
+  "verdict": "fail",
+  "short_circuited_at": "regime_information",
+  "config": {
+    "source": "examples\\holdings.example.yaml",
+    "data_source": "synthetic",
+    "seed": 20261024,
+    "benchmarks": "SPY",
+    "hedge_instrument": "SPY",
+    "lookback_days": 252,
+    "shrinkage_k": 60.0,
+    "rebalance": "monthly",
+    "costs_round_trip_bps": 7.0,
+    "horizon_days": 21
+  },
+  "summary": {
+    "n_days": 3915,
+    "n_trades": 121,
+    "n_proposals": 172,
+    "n_vetoes": 51,
+    "n_seat_errors": 0,
+    "n_signal_errors": 0,
+    "r_squared": 0.5850042453516432,
+    "hedged_cagr": 0.06494989053926425,
+    "unhedged_cagr": 0.06379284939827934,
+    "hedged_sharpe": 0.378220204846025,
+    "unhedged_sharpe": 0.3704575229693493,
+    "hedged_annualised_vol": 0.24700516519734989,
+    "unhedged_annualised_vol": 0.2539290879150964,
+    "hedged_max_drawdown": -0.4714759207910225,
+    "unhedged_max_drawdown": -0.6202648412698619,
+    "total_cost": 557.027248921192,
+    "trials_declared": 1
+  },
+  "gates": [
+    {
+      "name": "hedgeability",
+      "passed": true,
+      "headline": "R^2 58.5%",
+      "metrics": {
+        "r_squared": 0.5850042453516432,
+        "threshold": 0.25,
+        "implied_max_vol_reduction_pct": 35.579835870408026,
+        "source": "Healy and Lo (2010), condition (B) and equation (7)"
+      },
+      "notes": [
+        "R^2 = 58.5% clears the 25% threshold, so SPY explains enough of the portfolio's variance to be worth hedging."
+      ]
+    },
+    {
+      "name": "regime_information",
+      "passed": false,
+      "headline": "vol IC 0.0394, HAC t 0.51",
+      "metrics": {
+        "n_obs": 171,
+        "ic_dial_vs_forward_vol": 0.0393980904152892,
+        "ic_threshold": 0.02,
+        "hac_tstat": 0.5118388502521818,
+        "tstat_threshold": 1.96,
+        "expected_sign": "positive"
+      },
+      "notes": [
+        "HAC t-statistic is 0.51, below 1.96; we cannot rule out that this is noise."
+      ]
+    }
+  ],
+  "vetoes": [
+    {
+      "date": "2013-06-25",
+      "stage": "gross_cap",
+      "reason": "gross hedge 101.2% exceeds cap 100.0%"
+    },
+    {
+      "date": "2013-09-20",
+      "stage": "gross_cap",
+      "reason": "gross hedge 104.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-03-04",
+      "stage": "gross_cap",
+      "reason": "gross hedge 103.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-04-02",
+      "stage": "gross_cap",
+      "reason": "gross hedge 103.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-05-01",
+      "stage": "gross_cap",
+      "reason": "gross hedge 101.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-06-01",
+      "stage": "gross_cap",
+      "reason": "gross hedge 103.9% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-06-30",
+      "stage": "gross_cap",
+      "reason": "gross hedge 104.6% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-07-29",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.6% exceeds cap 100.0%"
+    },
+    {
+      "date": "2015-08-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 104.7% exceeds cap 100.0%"
+    },
+    {
+      "date": "2016-06-16",
+      "stage": "gross_cap",
+      "reason": "gross hedge 110.0% exceeds cap 100.0%"
+    },
+    {
+      "date": "2016-07-15",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.8% exceeds cap 100.0%"
+    },
+    {
+      "date": "2016-08-15",
+      "stage": "gross_cap",
+      "reason": "gross hedge 105.8% exceeds cap 100.0%"
+    },
+    {
+      "date": "2016-09-13",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-06-05",
+      "stage": "gross_cap",
+      "reason": "gross hedge 103.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-07-04",
+      "stage": "gross_cap",
+      "reason": "gross hedge 105.9% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-08-02",
+      "stage": "gross_cap",
+      "reason": "gross hedge 104.7% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-08-31",
+      "stage": "gross_cap",
+      "reason": "gross hedge 102.7% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-09-29",
+      "stage": "gross_cap",
+      "reason": "gross hedge 108.0% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-10-30",
+      "stage": "gross_cap",
+      "reason": "gross hedge 110.0% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-11-28",
+      "stage": "gross_cap",
+      "reason": "gross hedge 111.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2017-12-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 107.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2018-01-25",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2020-05-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 102.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2020-06-25",
+      "stage": "gross_cap",
+      "reason": "gross hedge 101.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2022-07-29",
+      "stage": "gross_cap",
+      "reason": "gross hedge 103.7% exceeds cap 100.0%"
+    },
+    {
+      "date": "2022-08-29",
+      "stage": "gross_cap",
+      "reason": "gross hedge 102.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2022-09-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 101.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-03-08",
+      "stage": "gross_cap",
+      "reason": "gross hedge 110.9% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-04-08",
+      "stage": "gross_cap",
+      "reason": "gross hedge 114.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-05-07",
+      "stage": "gross_cap",
+      "reason": "gross hedge 113.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-06-05",
+      "stage": "gross_cap",
+      "reason": "gross hedge 109.6% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-07-04",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.9% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-08-02",
+      "stage": "gross_cap",
+      "reason": "gross hedge 110.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-09-02",
+      "stage": "gross_cap",
+      "reason": "gross hedge 111.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-10-01",
+      "stage": "gross_cap",
+      "reason": "gross hedge 111.2% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-10-30",
+      "stage": "gross_cap",
+      "reason": "gross hedge 112.9% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-11-28",
+      "stage": "gross_cap",
+      "reason": "gross hedge 116.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2024-12-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 120.0% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-01-27",
+      "stage": "gross_cap",
+      "reason": "gross hedge 123.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-02-25",
+      "stage": "gross_cap",
+      "reason": "gross hedge 121.6% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-03-26",
+      "stage": "gross_cap",
+      "reason": "gross hedge 123.0% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-04-24",
+      "stage": "gross_cap",
+      "reason": "gross hedge 124.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-05-23",
+      "stage": "gross_cap",
+      "reason": "gross hedge 123.2% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-06-23",
+      "stage": "gross_cap",
+      "reason": "gross hedge 120.7% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-07-22",
+      "stage": "gross_cap",
+      "reason": "gross hedge 126.6% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-08-20",
+      "stage": "gross_cap",
+      "reason": "gross hedge 128.3% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-09-18",
+      "stage": "gross_cap",
+      "reason": "gross hedge 125.5% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-10-17",
+      "stage": "gross_cap",
+      "reason": "gross hedge 123.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-11-17",
+      "stage": "gross_cap",
+      "reason": "gross hedge 106.4% exceeds cap 100.0%"
+    },
+    {
+      "date": "2025-12-16",
+      "stage": "gross_cap",
+      "reason": "gross hedge 100.1% exceeds cap 100.0%"
+    },
+    {
+      "date": "2026-10-06",
+      "stage": "gross_cap",
+      "reason": "gross hedge 107.9% exceeds cap 100.0%"
+    }
+  ],
+  "seat_errors": [],
+  "signal_errors": [],
+  "trades": [
+    {
+      "date": "2013-01-01",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -69.0270509500422,
+      "price": 108.50800023042788,
+      "notional": 7489.987260392935,
+      "cost": 2.6214955411375276,
+      "equity_at_trade": 16499.301184026095
+    },
+    {
+      "date": "2013-01-30",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -38.39789718127439,
+      "price": 118.43524827002877,
+      "notional": 4547.66448571127,
+      "cost": 1.5916825699989445,
+      "equity_at_trade": 17798.135889670553
+    },
+    {
+      "date": "2013-02-28",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -56.57618584879586,
+      "price": 118.39537444067736,
+      "notional": 6698.358707993537,
+      "cost": 2.344425547797738,
+      "equity_at_trade": 18673.686955108
+    },
+    {
+      "date": "2013-03-29",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -48.75123657653358,
+      "price": 114.63431402104418,
+      "notional": 5588.564562628565,
+      "cost": 1.9559975969199979,
+      "equity_at_trade": 18320.598127279307
+    },
+    {
+      "date": "2013-04-29",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -50.2928763892234,
+      "price": 112.69043822421003,
+      "notional": 5667.5262798576105,
+      "cost": 1.9836341979501637,
+      "equity_at_trade": 17760.29772369155
+    },
+    {
+      "date": "2013-05-28",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -69.90995404034986,
+      "price": 110.56706053008463,
+      "notional": 7729.738120034797,
+      "cost": 2.705408342012179,
+      "equity_at_trade": 18185.354758041944
+    },
+    {
+      "date": "2013-07-25",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -48.64980321236731,
+      "price": 117.52698128455637,
+      "notional": 5717.664511637243,
+      "cost": 2.001182579073035,
+      "equity_at_trade": 19541.746061020935
+    },
+    {
+      "date": "2013-08-23",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -75.32370068597618,
+      "price": 110.12712586493222,
+      "notional": 8295.18266605698,
+      "cost": 2.903313933119943,
+      "equity_at_trade": 18784.8106952765
+    },
+    {
+      "date": "2013-10-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -33.30094233165084,
+      "price": 113.46958122133857,
+      "notional": 3778.643980648367,
+      "cost": 1.3225253932269285,
+      "equity_at_trade": 19301.527049125863
+    },
+    {
+      "date": "2013-11-20",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -46.50826662642993,
+      "price": 118.01589220204553,
+      "notional": 5488.7145806887465,
+      "cost": 1.9210501032410612,
+      "equity_at_trade": 20204.082443363255
+    },
+    {
+      "date": "2013-12-19",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -45.94014378028604,
+      "price": 126.95224038720332,
+      "notional": 5832.204176617557,
+      "cost": 2.041271461816145,
+      "equity_at_trade": 21546.089843572925
+    },
+    {
+      "date": "2014-01-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -40.00817382657517,
+      "price": 137.18066209995337,
+      "notional": 5488.347774939606,
+      "cost": 1.920921721228862,
+      "equity_at_trade": 22523.64303184646
+    },
+    {
+      "date": "2014-02-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -48.85726593576135,
+      "price": 147.94173458283274,
+      "notional": 7228.02866951128,
+      "cost": 2.5298100343289485,
+      "equity_at_trade": 24968.0577057731
+    },
+    {
+      "date": "2014-03-18",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -39.760024365680806,
+      "price": 142.30318885558492,
+      "notional": 5657.978256212134,
+      "cost": 1.9802923896742468,
+      "equity_at_trade": 24200.376804884916
+    },
+    {
+      "date": "2014-04-16",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -37.82073654668197,
+      "price": 155.73160049551743,
+      "notional": 5889.883834334092,
+      "cost": 2.0614593420169323,
+      "equity_at_trade": 25208.201490902535
+    },
+    {
+      "date": "2014-05-15",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -39.78392430777105,
+      "price": 159.88001832993706,
+      "notional": 6360.654547563265,
+      "cost": 2.2262290916471428,
+      "equity_at_trade": 25330.598367393006
+    },
+    {
+      "date": "2014-06-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -41.91120747585079,
+      "price": 159.75525439328013,
+      "notional": 6695.535612234086,
+      "cost": 2.34343746428193,
+      "equity_at_trade": 24577.179238564517
+    },
+    {
+      "date": "2014-07-14",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -37.89667908093791,
+      "price": 165.28701741432218,
+      "notional": 6263.829055195963,
+      "cost": 2.1923401693185873,
+      "equity_at_trade": 24549.53527615588
+    },
+    {
+      "date": "2014-08-12",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -32.06534655809917,
+      "price": 170.894831588457,
+      "notional": 5479.801999871867,
+      "cost": 1.9179306999551535,
+      "equity_at_trade": 26144.469829584126
+    },
+    {
+      "date": "2014-09-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -30.946168213716874,
+      "price": 167.88041300881318,
+      "notional": 5195.255500758995,
+      "cost": 1.8183394252656484,
+      "equity_at_trade": 24243.81579125255
+    },
+    {
+      "date": "2014-10-09",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -33.64101856409858,
+      "price": 171.79385187241436,
+      "notional": 5779.320160037893,
+      "cost": 2.0227620560132626,
+      "equity_at_trade": 23872.91889657609
+    },
+    {
+      "date": "2014-11-07",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -30.443510046074437,
+      "price": 176.14210839353015,
+      "notional": 5362.384046415167,
+      "cost": 1.8768344162453086,
+      "equity_at_trade": 22503.151738876197
+    },
+    {
+      "date": "2014-12-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -31.465443096083,
+      "price": 181.23090321630625,
+      "notional": 5702.51067240441,
+      "cost": 1.9958787353415433,
+      "equity_at_trade": 24588.059668492162
+    },
+    {
+      "date": "2015-01-06",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -38.92444696030712,
+      "price": 169.19109040561156,
+      "notional": 6585.669624649754,
+      "cost": 2.304984368627414,
+      "equity_at_trade": 23716.360113861974
+    },
+    {
+      "date": "2015-02-04",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -68.63865417533583,
+      "price": 155.15596509813992,
+      "notional": 10649.696631611701,
+      "cost": 3.727393821064095,
+      "equity_at_trade": 21509.639670512934
+    },
+    {
+      "date": "2015-09-28",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -37.41817663935759,
+      "price": 162.6759652432485,
+      "notional": 6087.038002449868,
+      "cost": 2.130463300857454,
+      "equity_at_trade": 22836.732897352733
+    },
+    {
+      "date": "2015-10-27",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -54.66183702944967,
+      "price": 184.37927821917336,
+      "notional": 10078.510057624013,
+      "cost": 3.5274785201684047,
+      "equity_at_trade": 28034.121313039836
+    },
+    {
+      "date": "2015-11-25",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -43.40707566138382,
+      "price": 190.67073240101274,
+      "notional": 8276.458907742228,
+      "cost": 2.8967606177097798,
+      "equity_at_trade": 28766.97457197316
+    },
+    {
+      "date": "2015-12-24",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -40.47438818788116,
+      "price": 180.09957854839283,
+      "notional": 7289.420254641446,
+      "cost": 2.5512970891245064,
+      "equity_at_trade": 28099.86563022746
+    },
+    {
+      "date": "2016-01-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -36.54472398555858,
+      "price": 178.50757895073187,
+      "notional": 6523.5102020848035,
+      "cost": 2.283228570729681,
+      "equity_at_trade": 27314.287744465353
+    },
+    {
+      "date": "2016-02-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -35.93895292127387,
+      "price": 186.90272779465445,
+      "notional": 6717.088335069751,
+      "cost": 2.350980917274413,
+      "equity_at_trade": 29405.63932427374
+    },
+    {
+      "date": "2016-03-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -37.88578806437575,
+      "price": 188.4139874299563,
+      "notional": 7138.212396135282,
+      "cost": 2.4983743386473485,
+      "equity_at_trade": 31631.734433392987
+    },
+    {
+      "date": "2016-04-20",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -39.430339511218456,
+      "price": 185.0925678973551,
+      "notional": 7298.262793195966,
+      "cost": 2.554391977618588,
+      "equity_at_trade": 31900.350803455072
+    },
+    {
+      "date": "2016-05-19",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -95.34141869499727,
+      "price": 175.26242313224404,
+      "notional": 16709.768065351054,
+      "cost": 5.848418822872869,
+      "equity_at_trade": 31439.319442406395
+    },
+    {
+      "date": "2016-10-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -36.54689171461398,
+      "price": 191.7099767210825,
+      "notional": 7006.4037598365685,
+      "cost": 2.452241315942799,
+      "equity_at_trade": 33874.405034572635
+    },
+    {
+      "date": "2016-11-11",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -55.2999710347329,
+      "price": 197.88742562493223,
+      "notional": 10943.168905196613,
+      "cost": 3.830109116818815,
+      "equity_at_trade": 34567.2118849079
+    },
+    {
+      "date": "2016-12-12",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -47.91425929318978,
+      "price": 208.90286355667044,
+      "notional": 10009.425971544153,
+      "cost": 3.5032990900404535,
+      "equity_at_trade": 36287.820224750234
+    },
+    {
+      "date": "2017-01-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -62.120023703306465,
+      "price": 197.73019347945916,
+      "notional": 12283.004305803377,
+      "cost": 4.299051507031183,
+      "equity_at_trade": 34595.45715706964
+    },
+    {
+      "date": "2017-02-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.42720853583293,
+      "price": 192.42833594972782,
+      "notional": 10088.480497039698,
+      "cost": 3.5309681739638945,
+      "equity_at_trade": 32252.306189692
+    },
+    {
+      "date": "2017-03-09",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -54.45073744337137,
+      "price": 191.91711360264094,
+      "notional": 10450.028363667077,
+      "cost": 3.657509927283477,
+      "equity_at_trade": 30599.833768065768
+    },
+    {
+      "date": "2017-04-07",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -60.939418670073465,
+      "price": 208.83477750519853,
+      "notional": 12726.269939260934,
+      "cost": 4.454194478741328,
+      "equity_at_trade": 35423.71319891553
+    },
+    {
+      "date": "2017-05-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -82.15876840448163,
+      "price": 196.2508797759501,
+      "notional": 16123.730580688052,
+      "cost": 5.643305703240818,
+      "equity_at_trade": 34069.92698271359
+    },
+    {
+      "date": "2018-02-26",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -28.525133497677185,
+      "price": 174.79997873400242,
+      "notional": 4986.192728778552,
+      "cost": 1.7451674550724932,
+      "equity_at_trade": 28126.797886376364
+    },
+    {
+      "date": "2018-03-27",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -47.44774246114074,
+      "price": 178.22429423067908,
+      "notional": 8456.340412975833,
+      "cost": 2.9597191445415416,
+      "equity_at_trade": 29731.266044589825
+    },
+    {
+      "date": "2018-04-25",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -42.03243531270395,
+      "price": 172.78772927405006,
+      "notional": 7262.689053540513,
+      "cost": 2.5419411687391795,
+      "equity_at_trade": 28533.47659339265
+    },
+    {
+      "date": "2018-05-24",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -44.93733813931232,
+      "price": 189.93636066652724,
+      "notional": 8535.234464222114,
+      "cost": 2.98733206247774,
+      "equity_at_trade": 30240.194074984458
+    },
+    {
+      "date": "2018-06-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -51.09449376416227,
+      "price": 190.0284344542793,
+      "notional": 9709.406659237693,
+      "cost": 3.3982923307331925,
+      "equity_at_trade": 30060.989563203057
+    },
+    {
+      "date": "2018-07-23",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -60.65120320323095,
+      "price": 220.5839914947158,
+      "notional": 13378.684491525775,
+      "cost": 4.682539572034022,
+      "equity_at_trade": 29402.324856959363
+    },
+    {
+      "date": "2018-08-21",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -64.63266626984019,
+      "price": 228.97168273270032,
+      "notional": 14799.050355306348,
+      "cost": 5.179667624357222,
+      "equity_at_trade": 33934.87144179507
+    },
+    {
+      "date": "2018-09-19",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -59.32787855133594,
+      "price": 235.67205929467195,
+      "notional": 13981.92331177754,
+      "cost": 4.893673159122139,
+      "equity_at_trade": 35517.47442964234
+    },
+    {
+      "date": "2018-10-18",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -61.662364116122085,
+      "price": 233.94674537009857,
+      "notional": 14425.709396792716,
+      "cost": 5.048998288877451,
+      "equity_at_trade": 32771.00534867133
+    },
+    {
+      "date": "2018-11-16",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -50.82468862447295,
+      "price": 225.8317290985654,
+      "notional": 11477.827312960913,
+      "cost": 4.0172395595363195,
+      "equity_at_trade": 28609.379359395054
+    },
+    {
+      "date": "2018-12-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -59.1369170804158,
+      "price": 230.99779384001658,
+      "notional": 13660.497380076044,
+      "cost": 4.781174083026615,
+      "equity_at_trade": 30708.240337480707
+    },
+    {
+      "date": "2019-01-15",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -56.13500354082352,
+      "price": 237.3564657236313,
+      "notional": 13324.006043833399,
+      "cost": 4.66340211534169,
+      "equity_at_trade": 32583.83462062785
+    },
+    {
+      "date": "2019-02-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -61.857783092673365,
+      "price": 251.64613725979228,
+      "notional": 15566.27217472534,
+      "cost": 5.448195261153868,
+      "equity_at_trade": 36195.10544518238
+    },
+    {
+      "date": "2019-03-14",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -62.80346089097525,
+      "price": 248.2733387944235,
+      "notional": 15592.424923247425,
+      "cost": 5.457348723136599,
+      "equity_at_trade": 36618.24962448858
+    },
+    {
+      "date": "2019-04-12",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -59.14041938812816,
+      "price": 235.3744661284713,
+      "notional": 13920.144640094559,
+      "cost": 4.872050624033095,
+      "equity_at_trade": 31723.5652338037
+    },
+    {
+      "date": "2019-05-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -58.36567979816668,
+      "price": 232.92614435515313,
+      "notional": 13594.892758054417,
+      "cost": 4.758212465319047,
+      "equity_at_trade": 30714.67897014345
+    },
+    {
+      "date": "2019-06-11",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -58.668127826461806,
+      "price": 235.23932346148172,
+      "notional": 13801.050698648605,
+      "cost": 4.8303677445270115,
+      "equity_at_trade": 33384.37123648959
+    },
+    {
+      "date": "2019-07-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -32.844522502048804,
+      "price": 245.75893155202812,
+      "notional": 8071.83475744006,
+      "cost": 2.8251421651040207,
+      "equity_at_trade": 34456.404925041876
+    },
+    {
+      "date": "2019-08-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -36.69284924836428,
+      "price": 243.0402120557559,
+      "notional": 8917.837862252338,
+      "cost": 3.1212432517883184,
+      "equity_at_trade": 30846.713991332508
+    },
+    {
+      "date": "2019-09-06",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -32.82371784362414,
+      "price": 251.15255649985505,
+      "notional": 8243.760650256112,
+      "cost": 2.8853162275896396,
+      "equity_at_trade": 30457.757867226403
+    },
+    {
+      "date": "2019-10-07",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -72.94049565799008,
+      "price": 245.3187571976753,
+      "notional": 17893.671744200557,
+      "cost": 6.262785110470195,
+      "equity_at_trade": 30615.540540733018
+    },
+    {
+      "date": "2019-11-05",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -23.90962283113929,
+      "price": 248.64718223840453,
+      "notional": 5945.060345345809,
+      "cost": 2.0807711208710327,
+      "equity_at_trade": 29871.757260326598
+    },
+    {
+      "date": "2019-12-04",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -47.73137064072937,
+      "price": 247.31051548423815,
+      "notional": 11804.46987792801,
+      "cost": 4.131564457274803,
+      "equity_at_trade": 28858.992714505406
+    },
+    {
+      "date": "2020-01-02",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -42.239665636642556,
+      "price": 263.5596165463959,
+      "notional": 11132.670078241486,
+      "cost": 3.8964345273845202,
+      "equity_at_trade": 33381.444882984724
+    },
+    {
+      "date": "2020-01-31",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -45.8892483001979,
+      "price": 264.5546412678682,
+      "notional": 12140.213622110985,
+      "cost": 4.249074767738845,
+      "equity_at_trade": 33440.92419358265
+    },
+    {
+      "date": "2020-03-02",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -45.695311317652695,
+      "price": 267.9370933407599,
+      "notional": 12243.468893752992,
+      "cost": 4.285214112813547,
+      "equity_at_trade": 33436.38812301655
+    },
+    {
+      "date": "2020-03-31",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -45.56428147534811,
+      "price": 256.2924971997615,
+      "notional": 11677.7834824298,
+      "cost": 4.08722421885043,
+      "equity_at_trade": 30012.444922284798
+    },
+    {
+      "date": "2020-04-29",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -65.98599420529054,
+      "price": 252.5063499517334,
+      "notional": 16661.882544714146,
+      "cost": 5.831658890649951,
+      "equity_at_trade": 32679.610541214668
+    },
+    {
+      "date": "2020-07-27",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -36.67772267488552,
+      "price": 272.81599102142565,
+      "notional": 10006.269259957908,
+      "cost": 3.5021942409852675,
+      "equity_at_trade": 34353.39668494373
+    },
+    {
+      "date": "2020-08-25",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -48.59226971949502,
+      "price": 275.993791724539,
+      "notional": 13411.164768384931,
+      "cost": 4.693907668934726,
+      "equity_at_trade": 35663.489658388244
+    },
+    {
+      "date": "2020-09-23",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -38.85071011882644,
+      "price": 286.6816790456564,
+      "notional": 11137.786808981236,
+      "cost": 3.8982253831434326,
+      "equity_at_trade": 34491.71110975578
+    },
+    {
+      "date": "2020-10-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -48.18027433332853,
+      "price": 314.6578883213603,
+      "notional": 15160.303380468991,
+      "cost": 5.306106183164147,
+      "equity_at_trade": 43231.811750824294
+    },
+    {
+      "date": "2020-11-20",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -31.06167536076838,
+      "price": 317.4653079012198,
+      "notional": 9861.004332334065,
+      "cost": 3.4513515163169224,
+      "equity_at_trade": 41958.33596725054
+    },
+    {
+      "date": "2020-12-21",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -33.43627429663019,
+      "price": 317.87512404681763,
+      "notional": 10628.559839704742,
+      "cost": 3.7199959438966594,
+      "equity_at_trade": 44397.59328716679
+    },
+    {
+      "date": "2021-01-19",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -64.7378089442774,
+      "price": 326.22964362641807,
+      "notional": 21119.392341046758,
+      "cost": 7.391787319366365,
+      "equity_at_trade": 46790.460599143225
+    },
+    {
+      "date": "2021-02-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.59791284428854,
+      "price": 314.05905119900444,
+      "notional": 16518.850602925188,
+      "cost": 5.781597711023816,
+      "equity_at_trade": 45185.55356093901
+    },
+    {
+      "date": "2021-03-18",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -50.22529412054349,
+      "price": 302.03443813512763,
+      "notional": 15169.76848986988,
+      "cost": 5.309418971454459,
+      "equity_at_trade": 39587.594401630195
+    },
+    {
+      "date": "2021-04-16",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -54.50318280162423,
+      "price": 313.5201750083519,
+      "notional": 17087.84741047742,
+      "cost": 5.980746593667098,
+      "equity_at_trade": 40508.61512821907
+    },
+    {
+      "date": "2021-05-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -53.70727594361853,
+      "price": 333.35602327690566,
+      "notional": 17903.643929600094,
+      "cost": 6.266275375360032,
+      "equity_at_trade": 46104.042146700776
+    },
+    {
+      "date": "2021-06-15",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -61.02721688908105,
+      "price": 356.90632841435865,
+      "notional": 21780.999913228658,
+      "cost": 7.62334996963003,
+      "equity_at_trade": 51532.66282915557
+    },
+    {
+      "date": "2021-07-14",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -56.06093731426855,
+      "price": 346.59971937757643,
+      "notional": 19430.705141169383,
+      "cost": 6.800746799409284,
+      "equity_at_trade": 50092.882832241994
+    },
+    {
+      "date": "2021-08-12",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -77.1684821319329,
+      "price": 316.73797403228104,
+      "notional": 24442.188689614708,
+      "cost": 8.554766041365149,
+      "equity_at_trade": 48480.612008789736
+    },
+    {
+      "date": "2021-09-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -59.26582913085266,
+      "price": 327.9179157509624,
+      "notional": 19434.327163841874,
+      "cost": 6.802014507344656,
+      "equity_at_trade": 50395.64780605841
+    },
+    {
+      "date": "2021-10-11",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -68.88599389898613,
+      "price": 334.1288550046534,
+      "notional": 23016.798267325776,
+      "cost": 8.055879393564021,
+      "equity_at_trade": 48388.29954308041
+    },
+    {
+      "date": "2021-11-09",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -64.17843626334889,
+      "price": 329.9072289883445,
+      "notional": 21172.930068446512,
+      "cost": 7.410525523956279,
+      "equity_at_trade": 47667.519276416126
+    },
+    {
+      "date": "2021-12-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.292966309891476,
+      "price": 325.9492842404911,
+      "notional": 17044.854939521243,
+      "cost": 5.965699228832435,
+      "equity_at_trade": 41345.542312259175
+    },
+    {
+      "date": "2022-01-06",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -67.58349285752165,
+      "price": 332.2206945150918,
+      "notional": 22452.63493488159,
+      "cost": 7.858422227208556,
+      "equity_at_trade": 41683.00628322678
+    },
+    {
+      "date": "2022-02-04",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -31.301342147759282,
+      "price": 338.08759001043234,
+      "notional": 10582.595330827906,
+      "cost": 3.703908365789767,
+      "equity_at_trade": 42141.38578734098
+    },
+    {
+      "date": "2022-03-07",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -45.9439026983662,
+      "price": 367.42071322622684,
+      "notional": 16880.741497830077,
+      "cost": 5.908259524240527,
+      "equity_at_trade": 45737.11747234367
+    },
+    {
+      "date": "2022-04-05",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -30.573894527517705,
+      "price": 360.7072480915293,
+      "notional": 11028.22535846158,
+      "cost": 3.8598788754615523,
+      "equity_at_trade": 42250.92318856151
+    },
+    {
+      "date": "2022-05-04",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -41.954593938317686,
+      "price": 343.6258859711678,
+      "notional": 14416.684512615002,
+      "cost": 5.045839579415251,
+      "equity_at_trade": 42466.41190738177
+    },
+    {
+      "date": "2022-06-02",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -35.95616400519364,
+      "price": 340.9977899122946,
+      "notional": 12260.972459495031,
+      "cost": 4.291340360823261,
+      "equity_at_trade": 45448.38778093733
+    },
+    {
+      "date": "2022-07-01",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -80.47708758324833,
+      "price": 336.30359932850615,
+      "notional": 27064.734217721845,
+      "cost": 9.472656976202646,
+      "equity_at_trade": 44108.44277465563
+    },
+    {
+      "date": "2022-10-27",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -81.17880707200817,
+      "price": 265.7213698692022,
+      "notional": 21570.94381952169,
+      "cost": 7.549830336832591,
+      "equity_at_trade": 52272.38341478052
+    },
+    {
+      "date": "2022-11-25",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -74.74439712264503,
+      "price": 284.58468913670714,
+      "notional": 21271.111019858523,
+      "cost": 7.444888856950484,
+      "equity_at_trade": 50685.344689933605
+    },
+    {
+      "date": "2022-12-26",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -80.19271848259685,
+      "price": 284.91928070094093,
+      "notional": 22848.451667514546,
+      "cost": 7.9969580836300915,
+      "equity_at_trade": 50897.11267299639
+    },
+    {
+      "date": "2023-01-24",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -72.70049909608053,
+      "price": 262.9713704584058,
+      "notional": 19118.149880306388,
+      "cost": 6.691352458107236,
+      "equity_at_trade": 47521.88819288113
+    },
+    {
+      "date": "2023-02-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -79.02521842929984,
+      "price": 292.14833089360224,
+      "notional": 23087.085662622285,
+      "cost": 8.080479981917799,
+      "equity_at_trade": 51111.04723119222
+    },
+    {
+      "date": "2023-03-23",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -57.25288512409089,
+      "price": 285.948703204844,
+      "notional": 16371.388255969692,
+      "cost": 5.7299858895893925,
+      "equity_at_trade": 50465.08051849163
+    },
+    {
+      "date": "2023-04-21",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -76.880978245399,
+      "price": 320.4844232404945,
+      "notional": 24639.155971141707,
+      "cost": 8.623704589899598,
+      "equity_at_trade": 58583.206924889804
+    },
+    {
+      "date": "2023-05-22",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -62.67444598511323,
+      "price": 329.415793172373,
+      "notional": 20645.952335825124,
+      "cost": 7.226083317538794,
+      "equity_at_trade": 59509.60112597688
+    },
+    {
+      "date": "2023-06-20",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -66.02719064388171,
+      "price": 337.5112165127002,
+      "notional": 22284.91743713249,
+      "cost": 7.799721102996372,
+      "equity_at_trade": 59179.893056025416
+    },
+    {
+      "date": "2023-07-19",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -51.135390870722716,
+      "price": 328.52329013353113,
+      "notional": 16799.166851113958,
+      "cost": 5.879708397889885,
+      "equity_at_trade": 57301.746350338144
+    },
+    {
+      "date": "2023-08-17",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.71316998014485,
+      "price": 346.3827339196198,
+      "notional": 18258.9319312922,
+      "cost": 6.390626175952271,
+      "equity_at_trade": 59058.329247981106
+    },
+    {
+      "date": "2023-09-15",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -59.79207343037749,
+      "price": 355.49512066874365,
+      "notional": 21255.79035916643,
+      "cost": 7.43952662570825,
+      "equity_at_trade": 60119.72903314677
+    },
+    {
+      "date": "2023-10-16",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -64.10944449218147,
+      "price": 380.0266995928427,
+      "notional": 24363.30060309427,
+      "cost": 8.527155211082995,
+      "equity_at_trade": 70336.41094601036
+    },
+    {
+      "date": "2023-11-14",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -58.97735279501073,
+      "price": 377.6018110527517,
+      "notional": 22269.95522649312,
+      "cost": 7.794484329272592,
+      "equity_at_trade": 67687.48324147273
+    },
+    {
+      "date": "2023-12-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -60.64776471819153,
+      "price": 367.41564170660206,
+      "notional": 22282.937392005362,
+      "cost": 7.799028087201877,
+      "equity_at_trade": 63988.05066168004
+    },
+    {
+      "date": "2024-01-11",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -54.589798436120155,
+      "price": 355.119144757807,
+      "notional": 19385.88253313606,
+      "cost": 6.785058886597621,
+      "equity_at_trade": 63683.5063338904
+    },
+    {
+      "date": "2024-02-09",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -116.52482858633262,
+      "price": 331.73475145898584,
+      "notional": 38655.33504988798,
+      "cost": 13.529367267460792,
+      "equity_at_trade": 71311.43084043132
+    },
+    {
+      "date": "2026-01-15",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -32.967965629313525,
+      "price": 238.34307086673522,
+      "notional": 7857.686168319565,
+      "cost": 2.7501901589118476,
+      "equity_at_trade": 49169.925028735146
+    },
+    {
+      "date": "2026-02-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -71.44622598292926,
+      "price": 257.33143999383634,
+      "notional": 18385.360214312233,
+      "cost": 6.4348760750092815,
+      "equity_at_trade": 55146.05347791462
+    },
+    {
+      "date": "2026-03-16",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -66.65227863463275,
+      "price": 269.4466025504575,
+      "notional": 17959.23003034824,
+      "cost": 6.285730510621884,
+      "equity_at_trade": 64504.60594849829
+    },
+    {
+      "date": "2026-04-14",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -61.65742175692766,
+      "price": 271.24326158400874,
+      "notional": 16724.16017820988,
+      "cost": 5.853456062373458,
+      "equity_at_trade": 64586.27418184093
+    },
+    {
+      "date": "2026-05-13",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.810001877359895,
+      "price": 278.7120787410769,
+      "notional": 14718.78540155915,
+      "cost": 5.151574890545702,
+      "equity_at_trade": 62364.01400157571
+    },
+    {
+      "date": "2026-06-11",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -52.612867698218714,
+      "price": 302.6226579687445,
+      "notional": 15921.845866192847,
+      "cost": 5.572646053167497,
+      "equity_at_trade": 66932.0122222763
+    },
+    {
+      "date": "2026-07-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -47.860922354757804,
+      "price": 279.6781489144886,
+      "notional": 13385.65416951873,
+      "cost": 4.684978959331556,
+      "equity_at_trade": 61854.994893387346
+    },
+    {
+      "date": "2026-08-10",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -51.051944344698704,
+      "price": 268.1670389642537,
+      "notional": 13690.44874828573,
+      "cost": 4.791657061900005,
+      "equity_at_trade": 61623.038944347114
+    },
+    {
+      "date": "2026-09-08",
+      "symbol": "SPY",
+      "side": "sell",
+      "quantity": -102.74034853689106,
+      "price": 259.0402672051941,
+      "notional": 26613.88733775103,
+      "cost": 9.31486056821286,
+      "equity_at_trade": 57839.34895197016
+    }
+  ],
+  "walkforward": [
+    {
+      "window": [
+        "W1",
+        0,
+        652
+      ],
+      "sharpe": 0.4650986810020758
+    },
+    {
+      "window": [
+        "W2",
+        652,
+        1304
+      ],
+      "sharpe": 0.6368347474799084
+    },
+    {
+      "window": [
+        "W3",
+        1304,
+        1956
+      ],
+      "sharpe": 0.04793227808796312
+    },
+    {
+      "window": [
+        "W4",
+        1956,
+        2608
+      ],
+      "sharpe": 0.7156980327027019
+    },
+    {
+      "window": [
+        "W5",
+        2608,
+        3260
+      ],
+      "sharpe": 0.40264788892050823
+    },
+    {
+      "window": [
+        "W6",
+        3260,
+        3915
+      ],
+      "sharpe": -0.03438421826168405
+    }
+  ]
+}
