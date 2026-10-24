@@ -14,11 +14,24 @@ Two implementations ship:
     one that cannot hallucinate.
 
 ``LLMJudge``
-    Calls an OpenAI-compatible chat endpoint N times. Enabled by setting
-    ``judge.provider: llm`` in the config and providing an API key. It is
-    included because the interesting question for a reader is "what does an
-    LLM add here, and does it help or hurt?" — and that question is
-    answerable only if the LLM path is actually runnable.
+    Calls an OpenAI-compatible chat endpoint N times. It is included because
+    the interesting question for a reader is "what does an LLM add here,
+    and does it help or hurt?" — and that question is answerable only if
+    the LLM path is actually runnable.
+
+    **How it is enabled.** There is no ``judge.provider`` config key, and
+    there is not one in the code either: the desk's configuration schema
+    has no ``judge`` section at all. The LLM judge is selected from the
+    **dashboard's Settings panel**, which writes the provider's base URL,
+    model and key into the local ``.env`` file, and from the "Desk" tab,
+    which builds the judge from that file. Programmatically, construct
+    ``LLMJudge`` directly — it takes ``base_url``, ``model`` and
+    ``api_key_env``.
+
+    (This docstring used to say "set ``judge.provider: llm`` in the
+    config". That key has never existed. A documented option that cannot
+    be selected makes the project look more capable than it is, which is
+    the exact failure this repository is about.)
 
 The ensemble
 ------------

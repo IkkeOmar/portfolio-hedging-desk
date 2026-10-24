@@ -53,10 +53,15 @@ REPO = Path(__file__).resolve().parents[1]
 # than at the copy committed to the repository.
 REPORT_PATH: Path | None = None
 
-# Files that are deliberately not in the repo, or that live outside it.
-EXTERNAL_OK = {
+# Prefixes that mean "this is not a path in this repository": a URL, an
+# email address, a fragment, or a placeholder. The path check skips them.
+#
+# This used to be a constant that nothing read, while the filter hard-coded
+# the same three prefixes inline. A declared-then-unused constant is a
+# signal that two places were meant to agree and only one of them did.
+EXTERNAL_OK = (
     "https://", "http://", "mailto:",
-}
+)
 # Paths that are copied into the repo at publish time. Referenced by the
 # README before they exist. Reported separately from real failures.
 PENDING_AT_PUBLISH: set[str] = set()
@@ -92,7 +97,7 @@ def referenced_paths(text: str) -> set[str]:
         for candidate in m.groups():
             if not candidate:
                 continue
-            if candidate.startswith(("http", "mailto:", "#", "<")):
+            if candidate.startswith(EXTERNAL_OK) or candidate.startswith(("<", "#")):
                 continue
             found.add(candidate.rstrip("/"))
     return found
@@ -147,6 +152,59 @@ NUM_RE = re.compile(
 # Failures recorded while gathering the known numbers. Non-empty means the
 # audit could not check everything it claims to check.
 DESK_FAILURES: list[str] = []
+
+
+def _same_number(a, b, rel: float = 1e-9) -> bool:
+    """Two floats that are the same measurement.
+
+    Compared with a stated relative tolerance, because a sum of thousands
+    of doubles is not bit-identical across platforms and library versions.
+    """
+    try:
+        fa, fb = float(a), float(b)
+    except (TypeError, ValueError):
+        return False
+    if fa == fb:
+        return True
+    scale = max(abs(fa), abs(fb), 1e-12)
+    return abs(fa - fb) / scale <= rel
+
+
+def _run_backtest_for_staleness():
+    """Re-run the backtest and return its report, or None if it cannot run.
+
+    The backtest is the experiment that produced the committed report, so
+    it is the only thing that can say whether that report is current.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "reports"
+        try:
+            proc = subprocess.run(
+                [sys.executable, str(REPO / "scripts" / "backtest.py"),
+                 "--config", "examples/holdings.example.yaml",
+                 "--journal", str(Path(tmp) / "journal"),
+                 "--out", str(out)],
+                cwd=str(REPO), capture_output=True, text=True, timeout=600,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            print(f"  WARNING: could not re-run the backtest ({exc}).")
+            return None
+        report = out / "evaluation.json"
+        if not report.exists():
+            # A non-zero exit is EXPECTED: the gate rejects, and that is a
+            # result. The report is written either way.
+            print(f"  NOTE: the backtest exited {proc.returncode} "
+                  f"(the gate rejecting is a result, not an error).")
+        if not report.exists():
+            print("  WARNING: the backtest produced no report.")
+            return None
+        try:
+            return json.loads(report.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"  WARNING: could not read the fresh report ({exc}).")
+            return None
 
 
 def harvest_desk_run() -> dict[str, list[str]]:
@@ -256,7 +314,24 @@ def harvest_known() -> dict[str, list[str]]:
         }:
             known.setdefault(key, []).append(source)
 
-    report = REPORT_PATH or (REPO / "reports" / "evaluation.json")
+    # The report the numbers come from.
+    #
+    # If --report was given, it is a report this run just produced, so it
+    # is current BY CONSTRUCTION. If it was not given, we fall back to the
+    # copy committed to the repository -- and that copy can be STALE, in
+    # which case it silently supplies numbers the current code no longer
+    # produces. A stale report would let a documented number pass the
+    # check while the code had moved on.
+    #
+    # So: when the committed report is used, it is checked against a live
+    # desk run, and a disagreement is a FAILURE, not a warning.
+    if REPORT_PATH is not None:
+        report = REPORT_PATH
+        report_is_current = True
+    else:
+        report = REPO / "reports" / "evaluation.json"
+        report_is_current = False
+
     if report.exists():
         data = json.loads(report.read_text(encoding="utf-8"))
         summary = data.get("summary", {})
@@ -267,6 +342,63 @@ def harvest_known() -> dict[str, list[str]]:
                 add(value, f"evaluation.json gate {gate['name']}.{key}")
         for window in data.get("walkforward", []):
             add(window.get("sharpe"), "evaluation.json walkforward")
+
+        if not report_is_current:
+            # The committed report is only trusted if it agrees with a live
+            # run. The live desk covers the summary fields it shares with
+            # the report; a disagreement means the committed copy is stale
+            # and every number it supplied is suspect.
+            # The staleness check, done properly.
+            #
+            # The committed report is the output of the BACKTEST. The desk
+            # run is a DIFFERENT experiment -- one trading day -- so
+            # comparing them reports a false positive on a perfectly fresh
+            # report (n_days is 1 in one and 3915 in the other). The only
+            # sound comparison is the SAME experiment run again, so this
+            # re-runs the backtest and compares the two reports.
+            #
+            # The backtest takes about 25 seconds on the bundled fixture,
+            # which is a price worth paying: a stale report would
+            # otherwise supply numbers the current code no longer
+            # produces, and a documented number would pass the check while
+            # the code had moved on.
+            fresh = _run_backtest_for_staleness()
+            if fresh is None:
+                DESK_FAILURES.append(
+                    "could not re-run the backtest, so the committed "
+                    "reports/evaluation.json could not be checked for "
+                    "staleness; the numbers it supplied are unverified"
+                )
+            else:
+                stale: list[str] = []
+                checked = 0
+                for key, value in summary.items():
+                    if not isinstance(value, (int, float)) or isinstance(value, bool):
+                        continue
+                    if not (isinstance(fresh.get("summary", {}).get(key), (int, float))):
+                        continue
+                    if _same_number(value, fresh["summary"][key]):
+                        checked += 1
+                    else:
+                        stale.append(
+                            f"summary.{key}={value} (fresh run: "
+                            f"{fresh['summary'][key]})"
+                        )
+                if stale:
+                    DESK_FAILURES.append(
+                        "the committed reports/evaluation.json is STALE: it "
+                        f"disagrees with a fresh backtest on {len(stale)} "
+                        f"field(s): {', '.join(stale[:6])}. A stale report "
+                        "silently supplies numbers the current code no "
+                        "longer produces, so every number it contributed is "
+                        "unverified. Regenerate it, or pass --report with a "
+                        "freshly produced one."
+                    )
+                else:
+                    known.setdefault("__report_is_current__", []).append(
+                        f"{checked} summary field(s) confirmed against a "
+                        f"fresh backtest"
+                    )
 
     # The audit notes: numbers that are established facts about the original
     # repo, quoted in the README. They are verified by the audit, not by a run.
