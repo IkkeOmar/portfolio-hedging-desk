@@ -31,7 +31,7 @@ plots = ["matplotlib>=3.7"]
 # package -- the desk, the backtest, the gates and the report -- must
 # install and run without a UI framework. Everything here is additive.
 dashboard = [
-  "streamlit>=1.40",
+  "streamlit>=1.55.0",
   "plotly>=5.20",
 ]
 # The runtime `dependencies` above stay deliberately lean: the evaluation

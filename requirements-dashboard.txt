@@ -6,5 +6,5 @@
 #
 # Streamlit reads .streamlit/config.toml from the *current working
 # directory*, so launch it from the repository root.
-streamlit>=1.40
+streamlit>=1.55.0
 plotly>=5.20

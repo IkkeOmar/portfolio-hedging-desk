@@ -485,3 +485,85 @@ optional dependency, which is not a failure of anything.
 *skip*, never an error. The distinction that matters is between "the
 extra is not here" (skip) and "the extra is here and the server still
 died" (raise) -- the second is a real defect and must fail the build.
+
+## 28. A floor that was below the feature, and a CI job that could not see it
+
+A reader installed the dashboard, ran it, and got a hard crash:
+`TypeError` on `st.button(width=...)`, plus six "not a valid config
+option" warnings. The declared floor was `streamlit>=1.40`, and the
+reader happened to have an older Streamlit on their global interpreter.
+
+**Why it was plausible:** the floor was written from a feeling ("1.40 is
+recent enough") and the CI job installed `streamlit>=1.40`, which is the
+*same* claim as the floor, so the two agreed with each other and nobody
+learned anything. And a CI job that installs `latest` would have agreed
+too, because the newest Streamlit accepts everything.
+
+**How it was caught:** by measuring instead of assuming. Thirteen
+Streamlit versions were installed, each in its own virtual environment,
+and each was asked two questions: does this widget have a `width`
+parameter, and does the version's own config parser reject any key in
+this repository's `.streamlit/config.toml`? The answers were not what the
+floor said:
+
+| version | `st.button(width=)` | `st.plotly_chart(width=)` | config keys rejected |
+|---|---|---|---|
+| 1.40.0 | no | no | **6** |
+| 1.49.0 | yes | no | 3 |
+| 1.51.0 | yes | yes | 1 (`metricValueFontSize`) |
+| 1.54.0 | yes | yes | 1 (`metricValueFontSize`) |
+| **1.55.0** | yes | yes | **none** |
+
+Two independent constraints bind, and the higher one wins: the floor is
+**1.55.0**, not 1.51.0.
+
+**The fix has two halves, and the second half matters more.** The floor is
+raised, and CI installs **that floor** rather than `latest`. But the app
+also feature-detects the parameter at runtime (`dashboard/compat.py`),
+because the reader's environment is not the repository's environment: a
+reader with an older Streamlit already in the same interpreter gets the
+app, not a crash. The check asks the installed package what it accepts,
+which cannot go stale the way a version comparison can.
+
+**Two probes lied on the way, and both are worth remembering:**
+
+- `config.get_option("theme.light")` raises on **every** version,
+  including the newest. `theme.light` is a TOML *table*, not a config
+  option, so this probe reports a defect that does not exist. The valid
+  probe is the version's own `_update_config_with_toml`, which is what a
+  reader's Streamlit actually runs.
+- A probe that string-matched a module's source reported that no version
+  accepted `width="stretch"` -- including 1.61.1, which demonstrably
+  does. The truth is in `streamlit.elements.lib.layout_utils.Width`,
+  which is `Union[int, Literal["stretch", "content"]]` from 1.49.0.
+
+**The rule:** a probe that returns the same answer for every input is not
+a measurement, and a probe that contradicts a fact you have already
+observed directly should be assumed wrong until it has been re-derived
+from the installed source. And a CI job that installs `latest` cannot
+test a floor -- it can only test the newest version, which is the one
+version guaranteed to work.
+
+## 29. A test that imported an optional dependency at module level
+
+The first version of the compat test imported Streamlit at the top of the
+file. On the core install -- which has no Streamlit, because it is an
+optional extra -- pytest raised `ModuleNotFoundError` **during
+collection**, which is an ERROR, and an ERROR fails the build.
+
+**Why it was plausible:** the import looked like a harmless convenience,
+and the file was new, so nothing had yet run it in the environment it
+would live in.
+
+**How it was caught:** the suite was run in a clean virtual environment
+built from `requirements.txt` alone, which is the base install the
+README promises. Collection failed with
+`ModuleNotFoundError: No module named 'streamlit'`.
+
+**The rule:** an optional dependency is imported **inside a fixture**,
+never at module level, and the skip happens there. A module-level
+`pytest.importorskip` is the other trap: it makes the whole file vanish
+from the collected count, so "how many tests does this repository have"
+depends on which extras are installed -- which is trap 15 in this file,
+already paid for once. The count is now the same in every environment:
+**92 collected, on the base install and on the full one.**

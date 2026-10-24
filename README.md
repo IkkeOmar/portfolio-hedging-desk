@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 python scripts/run_desk.py      # one trading day, five seats, a journal
 python scripts/backtest.py      # 15 years, walk-forward, the four gates
-python -m pytest tests/ -q      # 85 tests
+python -m pytest tests/ -q      # 92 tests
 ```
 
 **New here?** [`GUIDE.md`](GUIDE.md) is the map: the architecture in one
@@ -159,6 +159,23 @@ streamlit run dashboard/app.py
 from the current working directory, so the theme is silently ignored if you
 launch it from anywhere else. The URL is printed in the terminal
 (`http://localhost:8501`).
+
+**The Streamlit version matters, and here is why.** The dashboard needs
+Streamlit **1.55.0** or newer, and that floor is measured rather than
+guessed. Streamlit's `width` parameter arrived in three different releases
+for the three widgets this app uses (`st.button` and `st.dataframe` in
+1.49.0, `st.plotly_chart` in 1.51.0), and the theme key
+`metricValueFontSize` is only accepted from 1.55.0. On an older Streamlit
+the widget calls raise `TypeError` and the config parser rejects keys it
+does not recognise.
+
+You do not have to care, though. `dashboard/compat.py` inspects the
+Streamlit you actually have, at runtime, and uses the modern spelling when
+it is available and the older one when it is not. So on an older
+Streamlit you get the app, not a crash. The floor still matters, because
+that is the version CI tests against: a CI job that installs `latest`
+cannot catch a floor that is too low, since the newest Streamlit accepts
+everything.
 
 Six tabs:
 
@@ -345,7 +362,7 @@ The point of publishing the numbers is that you can check them.
 
 - Every figure in this README comes from `reports/evaluation.json`, produced
   by `python scripts/backtest.py`. Re-run it and compare.
-- **85 tests** (54 run on the base install; 31 more need the optional
+- **92 tests** (55 run on the base install; 37 more need the optional
   dashboard extra and skip without it), each cross-validated against an
   *independent* library or
   solver rather than a second implementation of our own code: Deflated

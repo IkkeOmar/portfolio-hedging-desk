@@ -24,7 +24,15 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from dashboard import charts, data, keys, style  # noqa: E402
+from dashboard import charts, compat, data, keys, style  # noqa: E402
+
+# Streamlit's width parameter arrived in three different releases for the
+# three widgets this app uses. compat resolves it once, at import, from the
+# INSTALLED package, and falls back to the older spelling. See
+# dashboard/compat.py for why this is a runtime check and not a version gate.
+BUTTON_WIDTH = compat.BUTTON_WIDTH
+DATAFRAME_WIDTH = compat.DATAFRAME_WIDTH
+PLOTLY_WIDTH = compat.PLOTLY_WIDTH
 from src.evaluation.gates import GATE_ORDER  # noqa: E402
 
 st.set_page_config(
@@ -238,7 +246,7 @@ with st.sidebar:
         help="Which portfolio to run.",
     )
     run_clicked = st.button("Run the backtest", type="primary", key=K_BACKTEST,
-                            width="stretch")
+                            **BUTTON_WIDTH)
 
     if run_clicked:
         with st.spinner("Running the walk-forward backtest. This takes about 16 seconds."):
@@ -279,8 +287,8 @@ with st.sidebar:
     )
 
     col_a, col_b = st.columns(2)
-    save_clicked = col_a.button("Save", key=K_SAVE, width="stretch")
-    test_clicked = col_b.button("Test", key=K_TEST, width="stretch")
+    save_clicked = col_a.button("Save", key=K_SAVE, **BUTTON_WIDTH)
+    test_clicked = col_b.button("Test", key=K_TEST, **BUTTON_WIDTH)
 
     effective_key = key_input or existing
     if save_clicked and key_input:
@@ -375,7 +383,7 @@ with tab_overview:
     if equity is not None:
         st.plotly_chart(
             charts.equity_figure(equity, payload.get("walkforward"), height=330),
-            width="stretch",
+            **PLOTLY_WIDTH,
         )
 
     st.markdown('<div class="hd-label">The gate stack</div>', unsafe_allow_html=True)
@@ -418,12 +426,12 @@ with tab_risk:
                               help="Log scale makes the relative gap visible.")
         st.plotly_chart(charts.equity_figure(equity, payload.get("walkforward"),
                                               log_scale=log_scale),
-                        width="stretch")
+                        **PLOTLY_WIDTH)
         left, right = st.columns([3, 2])
         with left:
-            st.plotly_chart(charts.drawdown_figure(equity), width="stretch")
+            st.plotly_chart(charts.drawdown_figure(equity), **PLOTLY_WIDTH)
         with right:
-            st.plotly_chart(charts.dial_figure(equity), width="stretch")
+            st.plotly_chart(charts.dial_figure(equity), **PLOTLY_WIDTH)
         st.markdown(
             '<div class="hd-note">The hedged curve is the teal one. The gap '
             "between the two curves is the risk that was removed; the cost is "
@@ -520,32 +528,32 @@ with tab_activity:
     trades = payload.get("trades") or []
     left, right = st.columns([3, 2])
     with left:
-        st.plotly_chart(charts.veto_figure(vetoes), width="stretch")
+        st.plotly_chart(charts.veto_figure(vetoes), **PLOTLY_WIDTH)
     with right:
-        st.plotly_chart(charts.veto_stage_figure(vetoes), width="stretch")
+        st.plotly_chart(charts.veto_stage_figure(vetoes), **PLOTLY_WIDTH)
 
     st.markdown('<div class="hd-label">Every refusal, with its reason</div>',
                 unsafe_allow_html=True)
     if vetoes:
         import pandas as pd
 
-        st.dataframe(pd.DataFrame(vetoes), width="stretch", hide_index=True)
+        st.dataframe(pd.DataFrame(vetoes), **DATAFRAME_WIDTH, hide_index=True)
     else:
         st.caption("Nothing was refused on this run.")
 
     st.markdown('<div class="hd-label">What the hedging cost</div>',
                 unsafe_allow_html=True)
-    st.plotly_chart(charts.cost_figure(trades), width="stretch")
+    st.plotly_chart(charts.cost_figure(trades), **PLOTLY_WIDTH)
     if trades:
         import pandas as pd
 
-        st.dataframe(pd.DataFrame(trades), width="stretch", hide_index=True)
+        st.dataframe(pd.DataFrame(trades), **DATAFRAME_WIDTH, hide_index=True)
 
 
 # --- Walk-forward -----------------------------------------------------------
 with tab_wf:
     wf = payload.get("walkforward") or []
-    st.plotly_chart(charts.walkforward_figure(wf), width="stretch")
+    st.plotly_chart(charts.walkforward_figure(wf), **PLOTLY_WIDTH)
     st.markdown(
         '<div class="hd-note">Each window is scored out of sample, in time. '
         "This is the only out-of-sample evidence in the repository: the "
@@ -567,7 +575,7 @@ with tab_wf:
                 "observations": window[2] if len(window) > 2 else "",
                 "Sharpe": w.get("sharpe"),
             })
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        st.dataframe(pd.DataFrame(rows), **DATAFRAME_WIDTH, hide_index=True)
 
 
 # --- Settings ---------------------------------------------------------------
@@ -595,7 +603,7 @@ with tab_settings:
         })
     import pandas as pd
 
-    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    st.dataframe(pd.DataFrame(rows), **DATAFRAME_WIDTH, hide_index=True)
 
     st.markdown('<div class="hd-label">Where the key goes</div>', unsafe_allow_html=True)
     st.markdown(

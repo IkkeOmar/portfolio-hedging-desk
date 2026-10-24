@@ -126,10 +126,24 @@ jobs:
         # the core suite install and run without them; this job installs
         # the extra and runs the UI tests for real, so the `importorskip`
         # in the test files never hides a broken dashboard in CI.
+        #
+        # It installs the DECLARED FLOOR, not the latest release. A job
+        # that installs `latest` cannot catch a floor that is too low:
+        # the newest Streamlit accepts the `width` parameter and the theme
+        # keys that the declared floor rejects, so the defect only appears
+        # on the version a reader is most likely to have.
+        #
+        # The floor is measured, not guessed: 1.55.0 is the first Streamlit
+        # that has the `width` parameter on st.button, st.dataframe AND
+        # st.plotly_chart (1.49.0 / 1.49.0 / 1.51.0) AND accepts every key
+        # in .streamlit/config.toml (theme.metricValueFontSize is rejected
+        # through 1.54.0). The dashboard also feature-detects the parameter
+        # at runtime, so a reader on an older Streamlit gets the app
+        # instead of a TypeError. See dashboard/compat.py.
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install "streamlit>=1.40" "plotly>=5.20" playwright
+          python -m pip install "streamlit>=1.55.0" "plotly>=5.20" playwright
           python -m pip install -e .
 
       - name: Install the browser
