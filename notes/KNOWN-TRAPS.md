@@ -673,3 +673,86 @@ convenience. Either replace it, or state the assumption in the report and
 say plainly what it does and does not model. It is now an explicit,
 documented config value, and the reports state the cash assumption
 instead of burying it.
+
+## 33. A ratio of two different scales, with the market's variance missing
+
+```
+systematic     = (portfolio_beta - beta) * beta    <- dimensionless
+idiosyncratic = beta * idio**2                     <- a variance
+hedgeable      = systematic / total
+```
+
+**Impact:** high. The metric is the Scan seat's entire reason to exist --
+it decides which holdings are worth hedging -- and it was measuring the
+wrong thing for the holdings that matter most.
+
+**Status:** fixed.
+
+**Symptom:** for any holding whose beta is ABOVE the portfolio's beta, the
+systematic term comes out **negative**. The share is then clipped to zero,
+so the desk reported "0% hedgeable" about exactly the holdings most
+exposed to the market, and therefore the ones a market hedge helps most.
+
+Measured on the bundled fixture (portfolio beta 0.9315):
+
+| holding | beta | old share | corrected share |
+|---|---|---|---|
+| MSFT | 0.692 | 0.910 | 0.336 |
+| AAPL | 1.008 | **0.000** | 0.369 |
+| NVDA | 1.024 | **0.000** | 0.129 |
+
+**Mechanism:** three separate faults in one line.
+
+1. **Scale.** The two terms are added, and one is dimensionless while the
+   other is a variance. Their sum has no units.
+2. **A missing input.** The market's variance never appears, so a
+   holding's "hedgeable share" could not change when market volatility
+   changed -- and it must: in a calm market most of a holding's risk is
+   its own, and in a violent market most of it is the market's. With the
+   old formula the share was **constant** across a 625x range of market
+   variance.
+3. **A sign inversion.** `(portfolio_beta - beta)` is negative exactly
+   when the holding is more market-exposed than the portfolio. The metric
+   measured the *opposite* of its own name.
+
+**Why it was plausible:** the formula was documented in the module
+docstring, it produced plausible-looking numbers in [0, 1], and it had
+**no test at all**. Nothing was pinned, so nothing could break. The
+docstring even said the first term was "the risk that comes from moving
+with the market", which is true of `beta**2 * var_m` and false of a beta
+difference.
+
+**How it was caught:** by asking what the metric would do when the market
+got more volatile -- a question the code had no answer to, because the
+market's variance was not in it.
+
+**Fix:** the metric is now the one-factor variance decomposition, the same
+model the data generator itself uses:
+
+```
+systematic     = (beta * sigma_m)**2     -- sigma_m from the panel
+idiosyncratic = idio**2
+total         = systematic + idiosyncratic
+hedgeable     = systematic / total
+```
+
+`sigma_m` is read from the benchmark's own returns over the cut-off
+window, so the metric sees the market as it is at the decision date. The
+now-dead `portfolio_beta` accumulation was removed with it.
+
+**`tests/test_scan_metric.py` pins it**, and each test was proved by
+reinstating the old formula and watching it fail: 6 of the 7 fail against
+the old code, and the seventh (the fail-closed missing-benchmark check)
+correctly still passes.
+
+**The published numbers did not move.** R^2 0.5850, 121 trades, 172
+proposals, 51 vetoes, cost 557.03, gates unchanged -- all identical
+before and after. The reason is that the Hedger weights the candidates by
+their portfolio weights, which are order-invariant; the seat's *ranking*
+changed, but the set of candidates it passed on did not.
+
+**The rule:** a ratio of two quantities is only meaningful if they are on
+the same scale, and a metric that claims to describe how exposed
+something is to a market must contain the market's volatility. Ask what
+the number does when the world changes; if the answer is "nothing", the
+number is missing its input.

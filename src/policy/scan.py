@@ -4,10 +4,15 @@ A scan is a *screen*, not a decision. It ranks the portfolio's holdings by
 how much market risk each one contributes, and passes the top few to the
 Hedger.
 
-The contribution metric is the key concept, and it is worth understanding:
+The contribution metric is the key concept, and it is worth understanding.
 
-    market risk contribution of holding i
-        = (portfolio_beta - beta_i) * beta_i + (beta_i * sigma_i^2)
+A holding's variance splits into a part that comes from the market and a part
+that comes from the asset's own behaviour. Using the same one-factor model the
+data generator itself uses:
+
+    total variance of holding i
+        = (beta_i * sigma_m)**2 + sigma_eps,i**2
+        = systematic variance + idiosyncratic variance
 
 The first term is the risk that comes from moving *with* the market (systematic
 risk). The second is risk that comes from the asset's own behaviour
@@ -16,6 +21,33 @@ instrument, so only the first term is worth hedging.
 
 That is the whole reason the Scan seat exists: it separates the risk a hedge
 can actually remove from the risk it cannot.
+
+Why both terms are variances
+----------------------------
+
+The two terms are ADDED, so they have to be on the same scale, and that scale
+has to be a variance. The market's variance has to enter, because how much of
+a holding's risk is market risk depends on how volatile the market is: in a
+calm market most of a holding's risk is its own, and in a violent market most
+of it is the market's.
+
+An earlier version of this file computed
+
+    systematic = (portfolio_beta - beta_i) * beta_i     <- dimensionless
+    idiosyncratic = beta_i * sigma_i**2                <- a variance
+
+and took their ratio. That is a defect, and it was not a subtle one:
+
+  * the two terms were on different scales, so their sum had no meaning;
+  * the market's variance never entered, so a holding's "hedgeable share"
+    could not change when the market's volatility changed -- and it must;
+  * for any holding whose beta is ABOVE the portfolio's beta (the ones most
+    exposed to the market, and therefore the most worth hedging), the
+    systematic term came out NEGATIVE, so the share was clipped to zero and
+    the desk reported "not hedgeable" about exactly the holdings a market
+    hedge can do the most for.
+
+The corrected metric is below, and ``tests/test_scan_metric.py`` pins it.
 
 Look-ahead discipline
 ----------------------
@@ -29,6 +61,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
+TRADING_DAYS = 252
 
 
 @dataclass
@@ -70,6 +104,23 @@ class ScanPolicy:
         if cutoff_panel.empty:
             raise ValueError("cut-off panel is empty")
 
+        # The market's annualised volatility over the cut-off window.
+        # Estimated from the benchmark's own returns in the panel, so the
+        # metric sees the market as it is at the decision date.
+        if self.benchmark not in cutoff_panel.columns:
+            raise KeyError(
+                f"benchmark {self.benchmark!r} not in panel columns; the scan "
+                "seat needs it to split a holding's risk into its market part "
+                "and its own part"
+            )
+        bench_returns = cutoff_panel[self.benchmark].pct_change().dropna()
+        if len(bench_returns) < 20:
+            raise ValueError(
+                f"need at least 20 benchmark returns to estimate market "
+                f"volatility, got {len(bench_returns)}"
+            )
+        market_vol = float(bench_returns.std(ddof=1) * np.sqrt(TRADING_DAYS))
+
         last = cutoff_panel.ffill().iloc[-1]
         values: dict[str, float] = {}
         for h in holdings:
@@ -79,13 +130,6 @@ class ScanPolicy:
         total_value = sum(v for v in values.values() if np.isfinite(v) and v > 0)
         if total_value <= 0:
             return []
-
-        portfolio_beta = 0.0
-        for h in holdings:
-            v = values.get(h.symbol, 0.0)
-            if not np.isfinite(v) or v <= 0:
-                continue
-            portfolio_beta += (v / total_value) * betas.get(h.symbol, 0.0)
 
         candidates: list[ScanCandidate] = []
         for h in holdings:
@@ -97,8 +141,18 @@ class ScanPolicy:
                 continue
             beta = float(betas.get(h.symbol, 0.0))
             idio = float(idio_vols.get(h.symbol, 0.0))
-            systematic = (portfolio_beta - beta) * beta
-            idiosyncratic = beta * idio**2
+            # Both terms are ANNUALISED VARIANCES, so they can be added.
+            #
+            #   systematic     = (beta * sigma_m)**2  -- the market's part
+            #   idiosyncratic = idio**2             -- the asset's own part
+            #
+            # sigma_m is the market's annualised volatility over the same
+            # cut-off window the betas were estimated on. It is read from
+            # the panel rather than from the config, because it has to be
+            # the volatility of THIS market on THIS window; a constant
+            # would make the metric unable to see a regime change.
+            systematic = (beta * market_vol) ** 2
+            idiosyncratic = idio**2
             total = systematic + idiosyncratic
             hedgeable = systematic / total if total > 0 else 0.0
             candidates.append(

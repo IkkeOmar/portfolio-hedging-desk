@@ -106,6 +106,15 @@ def main(argv: list[str] | None = None) -> int:
             "rebalance": config.hedging.rebalance,
             "costs_round_trip_bps": config.costs.round_trip_bps,
             "horizon_days": args.horizon,
+            # The Sharpe in this report is mean(excess returns) / std,
+            # annualised by sqrt(252). The risk-free rate it subtracts is
+            # ZERO, and it is stated here so a reader can check the
+            # assumption instead of having to infer it. A zero risk-free
+            # rate is a choice, not an oversight: this desk measures a
+            # hedge overlay on a synthetic equity panel, and a stated
+            # assumption beats an unstated one.
+            "risk_free_rate_per_period": 0.0,
+            "sharpe_definition": "mean(excess)/std(ddof=1)*sqrt(252)",
         },
         "summary": {
             "n_days": int(len(result.hedged_returns)),
