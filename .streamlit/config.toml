@@ -1,0 +1,61 @@
+# Theme for the dashboard.
+#
+# Streamlit reads `$CWD/.streamlit/config.toml`, so run the app from the
+# repository root:
+#
+#     streamlit run dashboard/app.py
+#
+# Every option name below was read out of the installed Streamlit package
+# (streamlit/config.py), not from memory, and the allowed values are the
+# ones that file documents. `base = "dark"` means "inherit Streamlit's dark
+# theme and override it with what follows"; the `[theme.light]` block takes
+# over when the reader switches to light mode from the settings menu.
+
+[server]
+headless = true
+# The dashboard is a local tool. It does not need to phone home.
+fileWatcherType = "auto"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+# --- options that apply to both colour schemes -------------------------
+base = "dark"
+font = "sans-serif"
+baseFontSize = 15
+baseFontWeight = 400
+metricValueFontSize = "1.85rem"
+showSidebarBorder = false
+
+# --- light mode ---------------------------------------------------------
+[theme.light]
+primaryColor = "#0E7490"
+backgroundColor = "#F5F7FB"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+baseRadius = "0.7rem"
+buttonRadius = "0.5rem"
+showWidgetBorder = false
+
+[theme.light.sidebar]
+primaryColor = "#0E7490"
+backgroundColor = "#EDF1F7"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+
+# --- dark mode ----------------------------------------------------------
+[theme.dark]
+primaryColor = "#22D3EE"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#141E33"
+textColor = "#E6EDF7"
+baseRadius = "0.7rem"
+buttonRadius = "0.5rem"
+showWidgetBorder = false
+
+[theme.dark.sidebar]
+primaryColor = "#22D3EE"
+backgroundColor = "#0D1526"
+secondaryBackgroundColor = "#141E33"
+textColor = "#C3D0E4"

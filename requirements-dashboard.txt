@@ -1,0 +1,10 @@
+# The dashboard. Optional: the desk, the backtest and the report do not
+# need any of this.
+#
+#   pip install -r requirements-dashboard.txt
+#   streamlit run dashboard/app.py
+#
+# Streamlit reads .streamlit/config.toml from the *current working
+# directory*, so launch it from the repository root.
+streamlit>=1.40
+plotly>=5.20

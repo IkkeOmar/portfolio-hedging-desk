@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 python scripts/run_desk.py      # one trading day, five seats, a journal
 python scripts/backtest.py      # 15 years, walk-forward, the four gates
-python -m pytest tests/ -q      # 54 tests
+python -m pytest tests/ -q      # 85 tests
 ```
 
 **New here?** [`GUIDE.md`](GUIDE.md) is the map: the architecture in one
@@ -143,6 +143,72 @@ against it would cost money and remove nothing. That distinction is the
 entire reason the Scan seat exists.
 
 `scripts/backtest.py` writes `reports/evaluation.json` and `reports/evaluation.md`.
+
+## The dashboard
+
+There is a local web dashboard, if you would rather look at the desk than
+read its output. It shows the same report the CLI writes — it does not
+compute anything of its own.
+
+```bash
+pip install -r requirements-dashboard.txt
+streamlit run dashboard/app.py
+```
+
+**Run it from the repository root.** Streamlit reads `.streamlit/config.toml`
+from the current working directory, so the theme is silently ignored if you
+launch it from anywhere else. The URL is printed in the terminal
+(`http://localhost:8501`).
+
+Six tabs:
+
+| Tab | What is in it |
+|---|---|
+| **Overview** | The verdict banner, the four headline numbers against the unhedged portfolio, the equity curve, and all four gates — including the two that never ran, marked *not reached* |
+| **Risk** | The equity curve on a log scale, the underwater drawdown plot, and the dial over time |
+| **Desk** | One trading day replayed seat by seat, with the judge's votes |
+| **Vetoes & trades** | Every refusal with its reason, and what the hedging cost |
+| **Walk-forward** | Sharpe by out-of-sample window |
+| **Settings** | Where the API key goes, and what it is used for |
+
+### The API key, and what it is for
+
+**You do not need one.** The dashboard, the desk, the backtest and the
+gates all run with no key, no network and no broker account. The default
+Judge seat is deterministic: three identical votes, aggregated by majority.
+
+A key is only needed if you want to swap in an LLM-backed judge on the
+**Desk** tab and watch a model's opinion differ from the rule-based one.
+You can set it in the sidebar, or write it into `.env` yourself:
+
+```bash
+DEEPSEEK_API_KEY=sk-...
+```
+
+`.env` is in `.gitignore`, so it cannot be committed by accident. The
+dashboard never renders a key, never writes one into the evaluation
+report, and never puts one in the journal.
+
+**What a key buys you is exactly one thing: the Judge's opinion.** The
+other four seats are arithmetic. The hedge ratio, the position size and
+the risk limits are never chosen by a model, and whether the strategy
+worked is decided by the gates, which are arithmetic too.
+
+### The dashboard is tested like a product
+
+Two layers, because one cannot cover the other:
+
+- `tests/test_dashboard.py` drives the app with Streamlit's own harness
+  and *interacts with it* — clicks the buttons, flips the switches,
+  changes the trading day, types a key, and checks that the key never
+  reaches the rendered page.
+- `tests/test_dashboard_browser.py` starts a real Streamlit server and
+  drives it with a real browser: it clicks every tab, every switch, the
+  provider dropdown and the connection-test button.
+
+Streamlit's harness cannot click a tab — a tab is a container, not a
+widget — so tab navigation is only testable in a browser. Both layers run
+in CI.
 
 ## The honest result
 
@@ -279,7 +345,7 @@ The point of publishing the numbers is that you can check them.
 
 - Every figure in this README comes from `reports/evaluation.json`, produced
   by `python scripts/backtest.py`. Re-run it and compare.
-- **54 tests**, each cross-validated against an *independent* library or
+- **85 tests**, each cross-validated against an *independent* library or
   solver rather than a second implementation of our own code: Deflated
   Sharpe against `skfolio`, probability of backtest overfitting against
   `purgedcv`, Newey-West t-statistics against `statsmodels`, covariance

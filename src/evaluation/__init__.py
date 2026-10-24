@@ -44,6 +44,7 @@ Conventions
 """
 
 from .gates import (
+    GATE_ORDER,
     GateResult,
     run_gates,
     hedgeability_gate,

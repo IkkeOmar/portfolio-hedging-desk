@@ -40,7 +40,11 @@ from src.evaluation.metrics import (  # noqa: E402
     sharpe,
 )
 from src.ledger.journal import Journal  # noqa: E402
-from src.report import write_json_report, write_markdown_report  # noqa: E402
+from src.report import (  # noqa: E402
+    write_equity_csv,
+    write_json_report,
+    write_markdown_report,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -130,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     out = Path(args.out)
     write_json_report(out / "evaluation.json", payload)
     write_markdown_report(out / "evaluation.md", payload)
+    write_equity_csv(out / "equity.csv", result)
 
     s = payload["summary"]
     print(f"\n=== walk-forward backtest: {s['n_days']} days, {s['n_trades']} trades, "
@@ -150,7 +155,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  WARNING: {s['n_seat_errors']} seat errors -- the desk did not run cleanly.")
         for err in result.seat_errors[:3]:
             print(f"    {err['date']}: {err['reason']}")
-    print(f"\n  wrote {out / 'evaluation.json'} and {out / 'evaluation.md'}")
+    print(f"\n  wrote {out / 'evaluation.json'}, {out / 'evaluation.md'} "
+          f"and {out / 'equity.csv'}")
     return 0 if passed else 1
 
 

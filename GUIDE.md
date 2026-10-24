@@ -62,7 +62,7 @@ python -m pytest tests/ -q
 - The backtest prints a walk-forward run over **3915 days** with **121
   trades**, **172 proposals** and **51 vetoes**, and writes
   `reports/evaluation.json` and `reports/evaluation.md`.
-- The tests print **54 passed**.
+- The tests print **85 passed**.
 
 **The result you will not like.** Gate 1 passes (R² 58.5% against a 25%
 threshold, implying at most a 35.6% volatility reduction). Gate 2 **fails**:
@@ -72,6 +72,41 @@ correct behaviour. A hedge that reduces risk on average but cannot say
 *when* is a hedge with an honest label on it.
 
 The backtest exits non-zero because of that failure. That is deliberate.
+
+---
+
+## The dashboard
+
+If you would rather look at the desk than read its output, there is a
+local web dashboard. It reads the same files the CLI writes, so it cannot
+disagree with them.
+
+```bash
+python -m pip install -r requirements-dashboard.txt
+streamlit run dashboard/app.py
+```
+
+Run it **from the repository root**: Streamlit reads `.streamlit/config.toml`
+from the current working directory, and the theme is silently ignored
+otherwise.
+
+**Three things to try in the dashboard.**
+
+1. **Open the Overview tab and read the banner.** It says the gate stack
+   failed, and it names the gate. Then scroll down: you will see two
+   gates marked *PASS* / *FAIL* and two marked *NOT REACHED*. A gate that
+   never ran is not a gate that passed, and the dashboard will not pretend
+   otherwise.
+2. **Open the Desk tab and press "Run this day".** The five seats run for
+   one real trading day and you see what each of them said, plus the
+   judge's three votes. Then flip "Use an LLM judge" — without a key it
+   tells you so rather than failing quietly.
+3. **Open the sidebar and press "Test" with a key.** It makes one small
+   call to the provider and tells you whether the key, the endpoint and
+   the model name work together. The key is written to `.env`, which is
+   in `.gitignore`.
+
+**You need no key for any of this.** The default judge is deterministic.
 
 ---
 

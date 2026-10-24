@@ -27,6 +27,13 @@ dependencies = [
 [project.optional-dependencies]
 market-data = ["yfinance>=0.2.40"]
 plots = ["matplotlib>=3.7"]
+# The dashboard. Streamlit and Plotly are optional because the core
+# package -- the desk, the backtest, the gates and the report -- must
+# install and run without a UI framework. Everything here is additive.
+dashboard = [
+  "streamlit>=1.40",
+  "plotly>=5.20",
+]
 # The runtime `dependencies` above stay deliberately lean: the evaluation
 # libraries are imported lazily inside the functions that use them, so the
 # core package imports with numpy/pandas/scipy/pyyaml alone. The test suite
@@ -34,6 +41,7 @@ plots = ["matplotlib>=3.7"]
 # Floors are the versions verified against Python 3.11 and 3.12.
 dev = [
   "pytest>=7.4",
+  "playwright>=1.44",
   "skfolio>=1.9.0",
   "purgedcv>=0.1.0",
   "statsmodels>=0.15.0",
@@ -46,7 +54,7 @@ hedging-desk = "src.desk:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "dashboard*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

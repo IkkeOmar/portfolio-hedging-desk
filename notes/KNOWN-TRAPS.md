@@ -298,3 +298,104 @@ the measurement.
 measurement.** Re-measure *after* you correct, not before — the correction
 is the last thing anyone will re-verify, so it is the thing that most
 needs checking.
+
+---
+
+## 17. A widget key and an application key that were the same string
+
+The dashboard gave a selectbox the key `desk_day` and also stored its own
+output in `st.session_state["desk_day"]`. Streamlit's rule is that
+**every widget with a key is added to Session State**, and the widget's
+value wins on the next run. So the app's stored tuple was overwritten by
+the widget's date string, and the line that read it back raised
+
+```
+ValueError: too many values to unpack (expected 2)
+```
+
+on **every** render — eleven of the seventeen dashboard tests failed from
+this one cause, and the traceback pointed at a line two hundred lines
+away from the mistake.
+
+**The rule:** a widget key and an application-state key must never be the
+same string. Keep them in separate namespaces — the convention is to
+prefix widget keys (`w_`), and to name application state for what it is
+(`app_desk_output`).
+
+## 18. A test that asserted the impossible
+
+The browser suite asserted that a typed API key must not appear in
+`page.content()`. It does appear, exactly once, as the `value` attribute
+of its own `<input type="password">`. That is how HTML stores a field's
+value; there is no way around it. The test could only ever fail, or be
+weakened until it asserted nothing.
+
+**The rule:** assert what is true, not what is convenient. The honest
+version is three assertions: the secret is not in the *rendered* text,
+it occurs exactly once in the source, and that one occurrence is its own
+input's value.
+
+## 19. A test that passed for the wrong reason
+
+The connection test filled in a custom base URL and then asserted that a
+network error was reported. It passed — because the *model name* was
+still empty, and the function refuses early with "No model name." before
+it ever opens a socket. The test proved that the validation worked. It
+proved nothing about the network path it was written for.
+
+**The rule:** a test that passes on the first run is a test to distrust.
+Break the thing it claims to check, confirm it fails, then restore it.
+And when an assertion is about a *path*, make sure the code actually
+reaches that path — otherwise the assertion is about the guard in front
+of it.
+
+## 20. Selectors written from memory instead of measured
+
+Four selectors were guessed, and every one of them found nothing:
+
+| Guessed | Reality | Why it failed |
+|---|---|---|
+| `button[role=tab]` | `<div data-testid="stTab" role="tab">` | a tab is a *div* |
+| `get_by_role("checkbox")` | `<input role="switch">` | the explicit role wins |
+| `get_by_role("switch").click()` | the input is 13x13 inside a `<label>` | the click stalls; click the container |
+| `page.inner_text("body")` for panel content | returns **rendered** text | `text-transform: uppercase` changes it, and only the selected tab is in it |
+
+**The rule:** read the selector out of the live DOM before writing the
+assertion. Dump the test ids, the roles, the input types and the bounding
+boxes once, and write the test against that dump.
+
+## 21. An API used from memory three times in a row
+
+Three library calls were written from recollection and all three were
+wrong: `plotly` template `.copy()` (which does not exist),
+`st.dataframe(..., use_container_width=True)` (deprecated, removed after
+2025-12-31), and a `pandas` frame with a list column (Arrow cannot
+convert it). Each was a five-minute fix *after* the failure, and each was
+avoidable by reading the installed package first.
+
+**The rule:** the installed source beats the documentation when they
+disagree, and both beat memory. `python -c "import streamlit, pathlib;
+print(pathlib.Path(streamlit.__file__).parent)"` then read the file.
+
+## 22. A name that matched two different things
+
+`get_by_role("button", name="Test")` matched **two** buttons, because
+Playwright matches `name` as a case-insensitive *substring* and
+"back**test**" contains "test". The test then failed with a strict-mode
+violation rather than with anything resembling the real problem.
+
+**The rule:** use `exact=True` whenever the name is a word that could
+occur inside another word. A strict-mode violation is a locator bug, not
+a product bug — read it as such.
+
+## 23. A framework's chrome, in a screenshot of a product
+
+Streamlit's Deploy button and main menu sit in the top-right of every
+app. A screenshot with them in it reads as "a Streamlit demo" no matter
+how the rest of the page is styled.
+
+**The rule:** if a picture of the app will ever be shown to anyone, hide
+the framework's chrome with CSS (`[data-testid="stAppDeployButton"]`).
+Note that `st.set_page_config(menu_items=...)` accepts exactly three
+keys — `"Get help"`, `"Report a Bug"` and `"About"` — and **no** deploy
+key, so the Deploy button can only be hidden, not configured away.

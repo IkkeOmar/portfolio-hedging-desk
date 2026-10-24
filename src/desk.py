@@ -34,7 +34,7 @@ from .execution.paper import PaperBroker
 from .ledger.journal import Journal
 from .ledger.schema import Decision, snapshot_hash
 from .policy.hedger import HedgePolicy
-from .policy.judge import LLMJudge, RuleBasedJudge, aggregate_verdicts
+from .policy.judge import Judge, LLMJudge, RuleBasedJudge, aggregate_verdicts
 from .policy.quant import QuantPolicy
 from .policy.risk import RiskPolicy
 from .policy.scan import ScanPolicy
@@ -47,6 +47,11 @@ class Desk:
     config: DeskConfig
     journal: Journal
     judge_runs: int = 3
+    # Optional: swap the deterministic judge for an LLM-backed one. ``None``
+    # means the default, which is the deterministic RuleBasedJudge -- the
+    # repo runs offline with no key. Injecting a judge here is the same
+    # extension point CONTRIBUTING.md describes.
+    judge: Judge | None = None
 
     def __post_init__(self) -> None:
         cfg = self.config
@@ -248,7 +253,7 @@ class Desk:
         result["seats"]["hedger"] = proposal
 
         # ---- Judge seat: N votes ---------------------------------------------
-        judge = RuleBasedJudge()
+        judge = self.judge or RuleBasedJudge()
         verdicts = [
             judge.judge(proposal, {"regime": regime.regime, "dial": regime.dial}, run=i)
             for i in range(self.judge_runs)

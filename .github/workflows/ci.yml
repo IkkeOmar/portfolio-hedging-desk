@@ -105,3 +105,51 @@ jobs:
           python -c "import json,sys; d=json.load(open(sys.argv[1])); assert 'gates' in d and 'verdict' in d, d.keys(); print('verdict:', d['verdict'], '| short_circuited_at:', d.get('short_circuited_at'))" "$CI_ARTIFACTS/reports/evaluation.json"
           echo "--- reports written ---"
           ls -l "$CI_ARTIFACTS/reports"
+
+  dashboard:
+    name: dashboard (browser click-through)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install the dashboard extra
+        # Streamlit and Plotly are an OPTIONAL extra. The core package and
+        # the core suite install and run without them; this job installs
+        # the extra and runs the UI tests for real, so the `importorskip`
+        # in the test files never hides a broken dashboard in CI.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install "streamlit>=1.40" "plotly>=5.20" playwright
+          python -m pip install -e .
+
+      - name: Install the browser
+        # The browser tests drive a real chromium against a real Streamlit
+        # server: Streamlit's own test harness cannot click a tab, because
+        # a tab is a container and not a widget.
+        run: playwright install --with-deps chromium
+
+      - name: Run the dashboard tests
+        # Two layers: the script-level harness (AppTest) and the browser
+        # layer (Playwright). Both skip silently when their dependency is
+        # missing, so this job is what makes "the dashboard works" a claim
+        # the build enforces rather than a claim the README makes.
+        run: python -m pytest tests/test_dashboard.py tests/test_dashboard_browser.py -v
+
+      - name: Assert the dashboard started and served the report
+        # The app must not need a key, a network or a broker. If the
+        # report is missing the dashboard shows a warning instead of the
+        # desk, and this catches that.
+        run: |
+          test -f reports/evaluation.json
+          test -f reports/equity.csv
+          python -c "import json,sys; d=json.load(open('reports/evaluation.json')); assert d['gates'], 'no gates in the report'; print('gates:', len(d['gates']), '| verdict:', d['verdict'])"

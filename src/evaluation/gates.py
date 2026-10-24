@@ -66,6 +66,12 @@ from .metrics import (
 # --------------------------------------------------------------- thresholds
 # Healy and Lo (2010), Section 2: "a very rough guideline for the minimum
 # R^2 needed to implement an effective hedging-overlay strategy is 25%".
+# The gate stack, in the order it runs. This is the single source of truth
+# for the order: ``run_gates`` short-circuits at the first failure, so a
+# report can contain fewer than four gates. The dashboard needs to know
+# which gates never ran, and it must not guess -- so it reads this.
+GATE_ORDER = ("hedgeability", "regime_information", "compensation", "stability")
+
 MIN_R_SQUARED = 0.25
 
 # Does the dial anticipate forward volatility? Expected sign is POSITIVE:

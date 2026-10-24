@@ -3,7 +3,10 @@ vendors/
 
 # Runtime state
 journal/
+# Journals written by a dashboard or CLI run are runtime output.
+reports/journal_*/
 __pycache__/
+.pytest_cache/
 *.egg-info/
 *.egg-info
 build/
@@ -25,6 +28,8 @@ secrets/
 *.parquet
 *.csv
 !scripts/*.csv
+# The equity series behind the dashboard's charts is a shipped artefact.
+!reports/equity.csv
 # ...except the shipped price fixture, which is a fixture and not an artifact.
 !examples/prices_sample.csv
 

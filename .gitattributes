@@ -1,0 +1,14 @@
+# Normalise line endings in the repository.
+#
+# The files are stored with LF. Without this, a Windows checkout with
+# core.autocrlf=true rewrites every file to CRLF in the working tree and
+# then shows the whole project as modified. With it, the working tree
+# matches the index on every platform.
+* text=auto eol=lf
+
+# Binary files must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.parquet binary

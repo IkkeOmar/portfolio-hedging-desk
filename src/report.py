@@ -20,6 +20,54 @@ def write_json_report(path: str | Path, payload: dict[str, Any]) -> Path:
     return path
 
 
+def write_equity_csv(path: str | Path, result: Any) -> Path:
+    """Write the daily equity and drawdown series as CSV.
+
+    The JSON report holds the headline numbers; this holds the *path* behind
+    them, one row per trading day, so a chart can be drawn without re-running
+    the backtest.
+
+    The drawdown column is computed from the equity curve with the same
+    definition ``src.evaluation.metrics.max_drawdown`` uses, so the worst
+    value in this file is the same number the report quotes.
+    """
+    import pandas as pd
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    dates = pd.DatetimeIndex(result.dates)
+    hedged = pd.Series(result.equity).reindex(dates)
+    unhedged = pd.Series(result.equity_unhedged).reindex(dates)
+
+    def _dd(series: pd.Series) -> pd.Series:
+        return series / series.cummax() - 1.0
+
+    # Rounded to 10 significant decimals. The full repr of a float is 17
+    # digits, which triples the file size and tells a reader nothing: the
+    # numbers come from a synthetic fixture, not from a measurement that
+    # needs 17 digits.
+    frame = pd.DataFrame({
+        "date": dates.strftime("%Y-%m-%d"),
+        "hedged_equity": hedged.round(10).to_numpy(),
+        "unhedged_equity": unhedged.round(10).to_numpy(),
+        "hedged_drawdown": _dd(hedged).round(10).to_numpy(),
+        "unhedged_drawdown": _dd(unhedged).round(10).to_numpy(),
+    })
+    for name, attr in (("dial", "dial"), ("forward_vol", "forward_vol"),
+                       ("r_squared", "r_squared_series")):
+        series = getattr(result, attr, None)
+        if series is None:
+            continue
+        frame[name] = pd.Series(series).reindex(dates).to_numpy()
+    regimes = getattr(result, "regimes", None)
+    if regimes is not None:
+        frame["regime"] = pd.Series(regimes).reindex(dates).astype(str).to_numpy()
+
+    frame.to_csv(path, index=False)
+    return path
+
+
 def _fmt(value: Any, digits: int = 4) -> str:
     if value is None:
         return "n/a"
