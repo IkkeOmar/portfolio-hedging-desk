@@ -377,6 +377,70 @@ def check_test_count(texts: dict[str, str], actual: int | None) -> list[str]:
     return problems
 
 
+def check_ledger(texts: dict[str, str]) -> list[str]:
+    """The defect ledger must not be described by a number nothing produces.
+
+    The README used to say "sixteen defects" in words. A spelled-out count
+    is a number NO COMMAND PRODUCES, so the numeric screen could not see
+    it -- and it was wrong by thirteen. This check counts the ledger's own
+    entries and refuses any document that states a count the ledger does
+    not have.
+
+    It also checks the other direction: a ledger that exists but is never
+    mentioned is a ledger nobody will read.
+    """
+    problems: list[str] = []
+    ledger = REPO / "notes" / "KNOWN-TRAPS.md"
+    if not ledger.exists():
+        problems.append("notes/KNOWN-TRAPS.md is missing")
+        return problems
+
+    entries = re.findall(r"^## (\d+)\. ", ledger.read_text(encoding="utf-8"), re.M)
+    actual = len(entries)
+    if actual == 0:
+        problems.append("notes/KNOWN-TRAPS.md has no numbered entries")
+    else:
+        # A count may be written as a DIGIT or as a WORD. The word form is
+        # the one the numeric screen cannot see, which is why it went stale
+        # for so long: "sixteen defects" is not a number any command
+        # produces, so nothing was checking it. Both forms are matched here.
+        words = {
+            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+            "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+            "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+            "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40,
+            "fifty": 50,
+        }
+        for label, text in texts.items():
+            for m in re.finditer(r"\b(\d+)\s+defects?\b", text, re.I):
+                claimed = int(m.group(1))
+                if claimed != actual:
+                    snippet = text[max(0, m.start() - 50):m.start() + 50].replace("\n", " ")
+                    problems.append(
+                        f"{label}: claims {claimed} defect(s) but the ledger has "
+                        f"{actual}  ...{snippet.strip()}..."
+                    )
+            for m in re.finditer(r"\b([A-Za-z]+)\s+defects?\b", text):
+                word = m.group(1).lower()
+                if word not in words:
+                    continue
+                claimed = words[word]
+                if claimed != actual:
+                    snippet = text[max(0, m.start() - 50):m.start() + 50].replace("\n", " ")
+                    problems.append(
+                        f"{label}: claims {claimed} defect(s) but the ledger has "
+                        f"{actual}  ...{snippet.strip()}..."
+                    )
+
+    if not any("KNOWN-TRAPS" in text for text in texts.values()):
+        problems.append(
+            "no audited document points at notes/KNOWN-TRAPS.md; a ledger "
+            "nobody is sent to is a ledger nobody reads"
+        )
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit documentation claims against the code.")
     parser.add_argument("--file", action="append", default=None,
@@ -465,6 +529,17 @@ def main(argv: list[str] | None = None) -> int:
         print("  PASS  every test count in the documentation matches the suite")
 
     print()
+    print("=" * 70)
+    print("D8  the defect ledger")
+    print("=" * 70)
+    ledger_problems = check_ledger(texts)
+    if ledger_problems:
+        for p in ledger_problems:
+            print(f"  FAIL  {p}")
+    else:
+        print("  PASS  the ledger's entry count matches what the documents claim")
+
+    print()
     if DESK_FAILURES:
         for f in DESK_FAILURES:
             print(f"  FAIL  {f}")
@@ -474,8 +549,10 @@ def main(argv: list[str] | None = None) -> int:
     verdict = (f"{len(path_problems)} dangling reference(s), "
                f"{len(number_problems)} number(s) to review, "
                f"{len(test_problems)} test-count mismatch(es), "
+               f"{len(ledger_problems)} ledger problem(s), "
                f"{len(DESK_FAILURES)} desk-run failure(s)")
-    if path_problems or test_problems or DESK_FAILURES or (args.strict and number_problems):
+    if (path_problems or test_problems or ledger_problems or DESK_FAILURES
+            or (args.strict and number_problems)):
         print(f"RESULT: {verdict}")
         return 1
     print(f"RESULT: {verdict}")

@@ -567,3 +567,109 @@ from the collected count, so "how many tests does this repository have"
 depends on which extras are installed -- which is trap 15 in this file,
 already paid for once. The count is now the same in every environment:
 **92 collected, on the base install and on the full one.**
+
+---
+
+## 30. A number labelled "Sharpe" that was not a Sharpe
+
+Our own audit of somebody else's post computed:
+
+```python
+sharpe = (cagr - 0.0) / vol
+```
+
+That is **CAGR divided by volatility** — a return-to-risk ratio, sometimes
+called a MAR ratio. It is *not* the Sharpe ratio, which is the mean excess
+return over the standard deviation of returns.
+
+| Quantity | Script reported | Correct value |
+|---|---|---|
+| Strategy "Sharpe" | **0.596** | **0.420** |
+| Buy & hold "Sharpe" | 0.355 | 0.309 |
+
+Both numbers were wrong, and the headline comparison ("Sharpe 0.596 vs
+buy-and-hold 0.355") was a comparison of two CAGR/volatility ratios
+dressed up as Sharpe ratios.
+
+**Why it was plausible:** this is the single most common mislabelled
+statistic in retail backtesting. The formula is short, the name is
+familiar, and the output looks like a Sharpe. Nobody compares it to the
+definition unless they are checking it.
+
+**How it was caught:** by writing down the definition and computing it the
+definition's way. The gap was far too large to be an annualisation
+convention.
+
+**Why it matters here specifically:** we were auditing a post that claimed
+a Sharpe number. Our own audit of that post used the wrong definition. A
+professional reader would have caught it in the first five minutes and
+used it to dismiss the whole repository.
+
+**The rule:** a Sharpe is `mean(excess) / std(excess, ddof=1)`, annualised
+by `sqrt(252)`. Never `CAGR / volatility`. `tests/test_metrics.py` now
+asserts that the two are *different numbers*, so the mislabelling cannot
+come back quietly.
+
+## 31. A trade count that counted legs and called them round trips
+
+An earlier note explained the gap between our 20 trades and a post's 42 by
+attributing it to the post using leveraged QLD:
+
+> "Trade count differs because the post uses 8% leveraged QLD and
+> continuous-entry threshold that triggers more round-trips"
+
+That explanation was invented. Re-derived from the data, the strategy
+produces **21 entries and 20 exits = 41 individual legs = 21 round trips**.
+The post's "42 trades" was legs, not round trips: the two numbers were the
+same measurement counted two ways.
+
+And our script's own count was wrong too:
+
+```python
+n_trades = int((position.diff().abs() == 1).sum() // 2 + ((position.iloc[0] == 1) * 1))
+```
+
+`41 // 2 = 20`. **Integer division of an odd count.** The true round-trip
+count is 21.
+
+**Why it was plausible:** the note explained a discrepancy smoothly and
+plausibly, and nobody recomputed the count from the data. A discrepancy
+with a good story attached is harder to challenge than one without.
+
+**How it was caught:** by counting the legs out of the position series
+rather than trusting the note that explained them.
+
+**The rule:** when a number disagrees with another number, the first
+question is not "why might they differ" but "are they the same
+measurement counted two ways". And an odd count divided by two needs a
+ceiling, not a floor.
+
+## 32. A risk-free rate that was a placeholder and was never replaced
+
+```python
+RF_RATE_DAILY = 0.0001    # placeholder cash return, ~3.6% annual
+                          # — we will overlay real FRED TB3MS later
+```
+
+Two problems:
+
+1. **The comment is wrong about its own number.** `0.0001 * 252 = 2.55%`
+   annualised, not the ~3.6% the comment claims.
+2. **The "later" never came.** The strategy holds cash **26.5% of the
+   time**, so the cash rate is not a rounding detail — it is a first-order
+   driver of the result. And the claim being tested was specifically
+   "cash earns the 3-month T-bill", which was never actually modelled.
+
+**Why it was plausible:** the placeholder was clearly marked as a
+placeholder, in a comment that promised to replace it. A promise in a
+comment is the easiest kind of debt to forget, and nobody reads the
+comment of a constant.
+
+**How it was caught:** by asking what the constant actually was, rather
+than what it was supposed to be.
+
+**The rule:** a placeholder that is load-bearing is a defect, not a
+convenience. Either replace it, or state the assumption in the report and
+say plainly what it does and does not model. It is now an explicit,
+documented config value, and the reports state the cash assumption
+instead of burying it.

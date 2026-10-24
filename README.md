@@ -395,8 +395,8 @@ The point of publishing the numbers is that you can check them.
   and checks every referenced path against the filesystem. A number that
   drifts out of the documentation fails the build instead of shipping.
 - **The mistakes are published too**, in
-  [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md): sixteen defects that were
-  in this code, each with its mechanism, why the wrong answer looked
+  [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md): every defect that was in
+  this code, each with its mechanism, why the wrong answer looked
   plausible, and how it was caught. The mistakes are the credibility — a
   system that cannot show its work has no business auditing anyone else's.
 
