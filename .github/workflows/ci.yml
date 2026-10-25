@@ -94,6 +94,38 @@ jobs:
         if: matrix.python-version == '3.11'
         run: python scripts/audit_claims.py --report "$CI_ARTIFACTS/reports/evaluation.json"
 
+      - name: Check out the lab repository
+        # The thread quotes numbers from BOTH repositories: the lab's gate
+        # verdicts and trial counts come from the lab's published sweep
+        # outputs, and the desk's come from this repository. The thread
+        # audit needs both to check anything, so the lab is checked out
+        # here.
+        #
+        # The ref is PINNED to the published commit, not to the branch
+        # head. A branch head moves, and a thread whose numbers are
+        # checked against a moving target is a thread whose audit can
+        # fail for a reason nobody can see in the diff. Bump the pin
+        # deliberately, in the same commit as any lab number the thread
+        # quotes.
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: IkkeOmar/hedging-agent-public
+          ref: 82669b6b2e0e1d4cd3a3cc81852048fccf7fc652
+          path: .lab
+
+      - name: Audit the thread against both repositories
+        # The thread is the one artefact that leaves this repository and
+        # lands in front of strangers, so its numbers are checked against
+        # the artefacts that produced them: the desk's report and ledgers
+        # here, the lab's published outputs and ledgers in the checkout
+        # above. A number that drifts out of the thread fails the build.
+        #
+        # --strict makes an unmatched number a failure rather than a
+        # warning: a number nobody can source is not published.
+        if: matrix.python-version == '3.11'
+        run: python scripts/audit_thread.py --lab-repo .lab --strict
+
       - name: Assert the backtest reports were written
         # The proof that the entry point really ran end to end: the report is
         # written whether the gates pass or fail.

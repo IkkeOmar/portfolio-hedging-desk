@@ -41,3 +41,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# The lab repository, checked out by CI so the thread audit can check
+# the thread's lab-side numbers against the published artefacts.
+.lab/
