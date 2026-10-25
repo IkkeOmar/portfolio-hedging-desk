@@ -107,11 +107,16 @@ jobs:
         # fail for a reason nobody can see in the diff. Bump the pin
         # deliberately, in the same commit as any lab number the thread
         # quotes.
+        #
+        # The lab's public history is ONE commit and is recreated rather
+        # than force-pushed, so a pin names a commit that exists and that
+        # will keep existing. The previous pin (82669b6) returns "No
+        # commit found for SHA", which is the intended state.
         if: matrix.python-version == '3.11'
         uses: actions/checkout@v4
         with:
           repository: IkkeOmar/hedging-agent-public
-          ref: 82669b6b2e0e1d4cd3a3cc81852048fccf7fc652
+          ref: f5c4f25b28f6ce2b5e11b5d32b1b7d92025c6575
           path: .lab
 
       - name: Audit the thread against both repositories
