@@ -813,3 +813,47 @@ was not checking it.
 point of the floor is to catch an incompatible feature, then the test
 environment must BE the floor -- not "at least the floor", which is the
 newest thing available and therefore always passes.
+
+## 35. An audit that trusted a report it did not produce
+
+The claim audit re-ran the DESK. It did not re-run the BACKTEST. So
+`reports/evaluation.json` -- the file every documented number was
+checked against -- could be stale, and a stale report supplies numbers
+the current code no longer produces.
+
+**Impact:** high, and invisible. The audit's whole job is to catch a
+number that has drifted away from the code. A stale report inverts that:
+the documented number and the stale report agree with each other, so the
+check passes, and the code has moved on without anyone noticing.
+
+**Why it was plausible:** the two are different experiments. The desk
+runs ONE trading day; the report is the full 15-year walk-forward
+backtest. They share field names and measure different things -- n_days
+is 1 in one and 3915 in the other -- so comparing them reports a false
+positive on a perfectly fresh report. The first version of the fix
+compared them anyway, and failed on a correct report. The second
+version compared the gate metrics, and failed the same way.
+
+**How it was caught:** by asking what the audit was actually checking.
+The only sound comparison is the SAME experiment run again, so the
+audit now re-runs the backtest -- about 25 seconds on the bundled
+fixture -- and compares the two reports field by field.
+
+**Fix.** When `--report` is given, the report is current by
+construction, so no check is needed. When it is not, the committed
+report is compared against a fresh backtest, and a disagreement is a
+FAILURE, not a warning:
+
+    FAIL  the committed reports/evaluation.json is STALE: it disagrees
+    with a fresh backtest on 1 field(s): summary.n_trades=999 (fresh run:
+    121). A stale report silently supplies numbers the current code no
+    longer produces, so every number it contributed is unverified.
+
+**Proved by breaking it:** changing one number in the committed report
+fails the audit with that exact message; restoring it passes.
+
+**The rule:** *a checker that reads a file it did not produce is
+checking the file, not the code.* If the artefact can drift, the check
+has to regenerate it. And when two things share names but measure
+different things, the fix is to run the same experiment twice, not to
+find a field where they happen to agree.
