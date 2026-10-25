@@ -464,6 +464,29 @@ def harvest_known() -> dict[str, list[str]]:
     return known
 
 
+# A number alone in a markdown table cell is a numeric claim. The prose
+# pattern above requires a unit word after the number ("10 checks"), so it
+# never sees `| Sharpe ratio | 0.378 | 0.370 |`. Every results table in
+# this repository is written that way, which means the numbers a reader
+# actually reads were the one kind of claim the check could not see.
+CELL_RE = re.compile(r"^\|(.+)\|\s*$")
+
+
+def table_cells(text: str) -> list[tuple[str, str]]:
+    """Every cell of every markdown table row: (value, row) pairs."""
+    out: list[tuple[str, str]] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        m = CELL_RE.match(stripped)
+        if not m:
+            continue
+        if set(m.group(1).replace("|", "").strip()) <= set("-: "):
+            continue
+        for cell in m.group(1).split("|"):
+            out.append((cell.strip(), stripped))
+    return out
+
+
 def check_numbers(texts: dict[str, str], known: dict[str, list[str]]) -> tuple[list[str], int]:
     problems: list[str] = []
     checked = 0
@@ -491,6 +514,36 @@ def check_numbers(texts: dict[str, str], known: dict[str, list[str]]) -> tuple[l
                     f"{label}: UNVERIFIED number {m.group(1)}{' ' + unit if unit else ''}"
                     f"  ...{snippet.strip()}..."
                 )
+
+        # Table cells. A results table is where the numbers a reader
+        # ACTUALLY reads live, and the prose pattern above cannot see
+        # them, because a cell is followed by a pipe rather than by a
+        # unit word. A number that has drifted out of the table was
+        # invisible to the check that exists to catch exactly that.
+        for cell, row in table_cells(text):
+            if not cell:
+                continue
+            for cm in re.finditer(
+                    r"(?<![\w.\-])([-+]?\d[\d,]*(?:\.\d+)?)(?![\w.])", cell
+            ):
+                raw = cm.group(1).replace(",", "")
+                try:
+                    value = float(raw)
+                except ValueError:
+                    continue
+                checked += 1
+                candidates = {
+                    f"{abs(value):.0f}", f"{abs(value):.1f}", f"{abs(value):.2f}",
+                    f"{abs(value):.3f}", f"{abs(value):.4f}",
+                    f"{abs(value) * 100:.0f}", f"{abs(value) * 100:.1f}",
+                    f"{abs(value) * 100:.2f}", f"{abs(value) * 100:.3f}",
+                }
+                hit = next((c for c in candidates if c in known), None)
+                if hit is None:
+                    problems.append(
+                        f"{label}: UNVERIFIED table cell '{raw}'"
+                        f"  ...{row[:90]}..."
+                    )
     return problems, checked
 
 
