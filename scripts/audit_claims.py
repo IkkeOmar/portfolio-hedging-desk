@@ -666,6 +666,12 @@ def check_tone(texts: dict[str, str]) -> list[str]:
 # path has to be the one that exists. "csv_source.py" could be a file
 # anywhere; "src/data/csv_source.py" is a specific promise.
 EXTENSION_SECTION = "## Where to take this next"
+# The section of AGENTS.md that names the extension points for a caller.
+# It is a heading, so a reader -- human or agent -- can find it by name.
+AGENTS_SEAM_SECTION = "### The seams, named on purpose"
+# The heading that carries the "may not" list. The contract has to say
+# what a caller must NOT do, not only what it may do.
+MAY_NOT_MARKER = "### Never"
 
 
 def check_extension_points(text: dict[str, str]) -> list[str]:
@@ -700,6 +706,99 @@ def check_extension_points(text: dict[str, str]) -> list[str]:
                     "in prose but absent in code is a broken promise."
                 )
     return problems
+
+
+def check_agents_agrees_with_readme(
+    readme: str, agents_path: Path
+) -> tuple[list[str], list[str]]:
+    """AGENTS.md must name the same seams the README names, and say what
+    a caller may not do.
+
+    D18 checks that the README names at least three extension points and
+    that every path resolves. This checks the other half: the machine-
+    facing contract has to agree with the human-facing one, or an agent
+    reading AGENTS.md is being told something the README does not say.
+
+    Two things are compared:
+
+    * the SEAMS -- the files each document offers as places to change the
+      code. They must be the same set. An AGENTS.md that names extra
+      seams is not wrong on its own, but it means the two documents
+      disagree about what the extension points are, and one of them is
+      wrong.
+    * the "MAY NOT" list -- the honesty of the project restated for a
+      machine. Without it the contract tells an agent what it may do and
+      is silent on what it must not, which is where an agent goes wrong.
+    """
+    problems: list[str] = []
+    pending: list[str] = []
+
+    if not agents_path.exists():
+        # The contract is required, and it is written -- but it is a
+        # PROTECTED file, so it lands only on approval. Until then it is
+        # PENDING, not broken: a build that fails for a file nobody has
+        # approved yet is a build that trains people to ignore the
+        # checker. The moment the file lands, the two documents are
+        # compared and a disagreement fails.
+        pending.append(
+            "AGENTS.md is not published yet. The agent-usability contract "
+            "is required -- a reader's LLM is a first-class reader of "
+            "this repository -- and it is written and verified, but it is "
+            "a protected file and lands only on approval. The check "
+            "below compares the two documents as soon as it is there."
+        )
+        return problems, pending
+
+    agents = agents_path.read_text(encoding="utf-8")
+
+    def seams_of(text: str) -> set[str]:
+        # The seam table's "Where" column: backticked paths that point
+        # into the source tree. Paths under scripts/ are commands, not
+        # seams, so they are excluded.
+        found = set(re.findall(r"`([A-Za-z_][\w/]*\.py)`", text))
+        found |= set(re.findall(r"`(src/[A-Za-z_][\w/]*/)`", text))
+        return {p for p in found if not p.startswith("scripts/")}
+
+    readme_start = readme.find(EXTENSION_SECTION)
+    if readme_start == -1:
+        return problems, pending  # D18 already reports the missing section
+    readme_end = readme.find("\n## ", readme_start + len(EXTENSION_SECTION))
+    readme_seams = seams_of(
+        readme[readme_start:readme_end if readme_end != -1 else len(readme)]
+    )
+
+    agents_start = agents.find(AGENTS_SEAM_SECTION)
+    if agents_start == -1:
+        problems.append(
+            f"AGENTS.md has no '{AGENTS_SEAM_SECTION}' section, so it does "
+            "not name the extension points for a caller"
+        )
+        return problems, pending
+    agents_end = agents.find("\n### ", agents_start + len(AGENTS_SEAM_SECTION))
+    if agents_end == -1:
+        agents_end = len(agents)
+    agents_seams = seams_of(agents[agents_start:agents_end])
+
+    missing = sorted(readme_seams - agents_seams)
+    if missing:
+        problems.append(
+            "AGENTS.md does not name the extension point(s) the README "
+            f"names: {', '.join(missing)}. The two documents must agree on "
+            "where the seams are, or an agent reading AGENTS.md is being "
+            "told something the README does not say."
+        )
+
+    for label, marker in (("may not", MAY_NOT_MARKER),):
+        if marker not in agents:
+            problems.append(
+                f"AGENTS.md has no {label} list. The contract has to say "
+                "what a caller may NOT do, not only what it may do: it may "
+                "not turn this into a signal generator, may not weaken a "
+                "gate threshold to make something pass, and may not present "
+                "the output as advice about what to hold."
+            )
+
+    return problems, pending
 
 
 def check_the_desk_did_work(report_path: Path) -> tuple[list[str], list[str]]:
@@ -886,6 +985,22 @@ def main(argv: list[str] | None = None) -> int:
 
     print()
     print("=" * 70)
+    print("D19  the agent contract agrees with the README")
+    print("=" * 70)
+    agents_problems, agents_pending = check_agents_agrees_with_readme(
+        texts["README.md"], REPO / "AGENTS.md"
+    )
+    for n in agents_pending:
+        print(f"  PENDING  {n}")
+    if agents_problems:
+        for p in agents_problems:
+            print(f"  FAIL  {p}")
+    elif not agents_pending:
+        print("  PASS  AGENTS.md names the same extension points as the "
+              "README, and says what a caller may not do")
+
+    print()
+    print("=" * 70)
     print("D8  the defect ledger")
     print("=" * 70)
     ledger_problems = check_ledger(texts)
@@ -923,10 +1038,12 @@ def main(argv: list[str] | None = None) -> int:
                f"{len(ledger_problems)} ledger problem(s), "
                f"{len(tone_problems)} voice problem(s), "
                f"{len(ext_problems)} extension-point problem(s), "
+               f"{len(agents_problems)} agent-contract problem(s), "
                f"{len(work_problems)} did-not-work problem(s), "
                f"{len(DESK_FAILURES)} desk-run failure(s)")
     if (path_problems or test_problems or ledger_problems or tone_problems
             or ext_problems or DESK_FAILURES or work_problems
+            or agents_problems
             or (args.strict and number_problems)):
         print(f"RESULT: {verdict}")
         return 1
