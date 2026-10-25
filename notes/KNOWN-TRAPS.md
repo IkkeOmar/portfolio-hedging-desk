@@ -924,3 +924,60 @@ gates, the numbers, the paths, the voice. None of them asked whether
 the machine ran. A check that cannot fail is not a check, and the
 strongest form of that is a report that is indistinguishable between
 working and broken.
+
+## 37. A selector that named a role the pinned version does not have
+
+CI installs `streamlit==1.55.0`, pinned so that a floor is a floor and
+not a moving target. The browser test addressed a toggle with
+`get_by_role("switch", name="Log scale")`, and its own docstring said
+why that was right:
+
+    A toggle is `<input type="checkbox" role="switch">`. The explicit
+    `role="switch"` overrides the implicit checkbox role, so
+    `get_by_role("checkbox")` finds nothing.
+
+That was measured, against a newer Streamlit, and it was true there. On
+1.55.0 the input is a plain `<input type="checkbox">` with an
+`aria-label` and NO explicit role. So `get_by_role("switch")` found
+nothing, and the test waited 30 seconds for an element that does not
+exist.
+
+**Impact:** medium, and it was CI-only. The dashboard worked; the test
+that was supposed to prove it could not find its own widget. The job
+had been red for three commits before anyone looked, because "the
+dashboard job is red" is easy to read as an infrastructure flake and
+hard to read as a fact about the pinned version.
+
+**Why it was plausible:** the pin was the fix for a DIFFERENT defect
+(entry 34: a CI job that installed ">= the floor", and so could not see
+it). Pinning the floor is right, and it immediately paid for itself by
+revealing that the test suite had never run against the floor. The test
+was written against whatever Streamlit happened to be installed at the
+time, and the pin turned that into a different version.
+
+**How it was caught:** by reading the CI log instead of the summary.
+The log said what was being waited for -- `waiting for
+get_by_role("switch", name="Log scale")` -- which names the assumption
+that was wrong. The summary only said "1 failed".
+
+**Fix.** The role is not a stable part of the contract; the container
+and the input inside it are. The helper now finds the input inside the
+`stCheckbox` container:
+
+    box = page.locator("[data-testid='stCheckbox']").filter(has_text=label).first
+    return box.locator("input[type='checkbox']").is_checked()
+
+which works whether the input carries `role="switch"`, no role, or
+something else. The docstring that recorded the old fact was corrected
+too, because a wrong fact written down is a defect that waits to be
+copied.
+
+**Proved by breaking it:** the test fails on 1.55.0 with the old
+locator and passes with the new one. The whole dashboard suite, 42
+tests, passes against the pinned version.
+
+**The rule:** *a pin is a promise that the code runs against that
+version, and the first thing to check after making it is what the pin
+breaks.* A selector written against "whatever is installed" is not
+measured against anything. Address the thing you mean, not the role it
+happens to carry today.

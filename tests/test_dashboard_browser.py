@@ -16,9 +16,12 @@ live DOM, not guessed. The things that are not obvious:
 
 * A tab is ``<div data-testid="stTab" role="tab">`` -- a *div*, not a
   button, so ``button[role=tab]`` finds nothing.
-* A toggle is ``<input type="checkbox" role="switch">``. The explicit
-  ``role="switch"`` overrides the implicit checkbox role, so
-  ``get_by_role("checkbox")`` finds nothing. The input is 13x13 and
+* A toggle is ``<input type="checkbox">`` inside
+  ``[data-testid="stCheckbox"]``, with the label as its ``aria-label``.
+  The ROLE it carries is not stable: Streamlit 1.55.0 sets no explicit
+  role, so ``get_by_role("switch")`` finds nothing, while newer versions
+  add ``role="switch"`` and flip the implicit role. Address the input
+  inside the container instead of the role. The input is 13x13 and
   wrapped in a label, so clicking the *input* stalls; clicking the
   ``stCheckbox`` container is what actually toggles it.
 * ``get_by_role(name=...)`` matches a case-insensitive *substring* by
@@ -153,7 +156,20 @@ def _toggle(page, label: str):
 
 
 def _switch_state(page, label: str) -> bool:
-    return page.get_by_role("switch", name=label).is_checked()
+    """The toggle's state, addressed the same way on every Streamlit version.
+
+    The input inside the ``stCheckbox`` container is addressed directly,
+    rather than by ARIA role. The role is not stable across versions:
+    Streamlit 1.55.0 renders ``st.toggle`` as a plain
+    ``<input type="checkbox">`` with an ``aria-label`` and NO explicit
+    role, so ``get_by_role("switch")`` finds nothing and
+    ``get_by_role("checkbox")`` finds the wrong element. Newer versions
+    add ``role="switch"``, which flips the implicit role from checkbox to
+    switch. The container and the input inside it are the same in both,
+    so this addresses the thing rather than the role it happens to carry.
+    """
+    box = page.locator("[data-testid='stCheckbox']").filter(has_text=label).first
+    return box.locator("input[type='checkbox']").is_checked()
 
 
 def _pick(page, label: str, option: str) -> None:
