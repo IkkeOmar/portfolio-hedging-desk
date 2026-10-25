@@ -143,7 +143,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install "streamlit>=1.55.0" "plotly>=5.20" playwright
+          # The FLOOR, exactly -- not ">= the floor".
+          #
+          # `streamlit>=1.55.0` installs the NEWEST Streamlit, and a CI job
+          # that installs the newest cannot catch a too-low floor: the bug
+          # only appears on the version nobody is testing. Pinning the floor
+          # makes the CI answer the question it exists to answer -- does the
+          # app work on the oldest Streamlit this repo claims to support?
+          #
+          # 1.55.0 is the floor because it is the first version that accepts
+          # theme.metricValueFontSize (rejected through 1.54.0) and has
+          # st.button(width=...) (1.49.0) and st.plotly_chart(width=...)
+          # (1.51.0). The dashboard also feature-detects `width` at
+          # runtime, so a reader on an older Streamlit gets the app instead
+          # of a TypeError. See dashboard/compat.py.
+          python -m pip install "streamlit==1.55.0" "plotly>=5.20" playwright
           python -m pip install -e .
 
       - name: Install the browser

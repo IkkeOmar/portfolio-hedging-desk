@@ -573,6 +573,77 @@ def check_ledger(texts: dict[str, str]) -> list[str]:
     return problems
 
 
+# The house voice, from GOAL.md section 1d item 18:
+#
+#   "No urgency, no engagement bait, no emoji, no em-dashes, no
+#    'tag a friend', no performance claim of any kind."
+#
+# And item 12 says these rules govern the README, AGENTS.md, the cards
+# and the thread -- not only the thread. So they are checked here, on the
+# documents a reader actually follows.
+#
+# A rule that lives only in a document is a preference. A rule with a
+# check is a constraint, and this one has already been broken once: both
+# READMEs carried em-dashes until this check existed.
+TONE_RULES = (
+    ("em-dash", "\u2014"),
+    ("emoji", "[\U0001F300-\U0001FAFF\u2600-\u27BF\uFE0F]"),
+)
+BANNED_PHRASES = (
+    ("tag a friend", r"tag a friend"),
+    ("act now", r"\bact now\b"),
+    ("don't miss out", r"don'?t miss out"),
+    ("limited time", r"\blimited time\b"),
+)
+
+
+# The house voice governs the ENTRY POINT: the documents a reader meets
+# first. GOAL.md section 1d item 12 names them -- "the README, AGENTS.md,
+# the cards and the thread".
+#
+# It does NOT govern the technical references. CONTRIBUTING.md is a guide
+# for people who are already reading the code, and METHODOLOGY.md carries
+# the derivations and the paper citations; both are written for a reader
+# who arrived through the README and wants the detail. Enforcing the
+# entry-point voice on them would trade accuracy for tone, and the point
+# of this check is that it measures what it claims to measure.
+#
+# The list is explicit rather than inferred, so a document cannot be
+# quietly added to the scope or quietly dropped from it.
+TONE_SCOPE = ("README.md", "GUIDE.md")
+
+
+def check_tone(texts: dict[str, str]) -> list[str]:
+    """Screen the entry-point documents against the house voice.
+
+    Returns a list of problems; empty means the documents pass.
+    """
+    problems: list[str] = []
+    for name, text in texts.items():
+        if name not in TONE_SCOPE:
+            continue
+        for label, pattern in TONE_RULES:
+            rx = re.compile(pattern)
+            hits = rx.findall(text)
+            if hits:
+                lines = [i + 1 for i, line in enumerate(text.splitlines())
+                         if rx.search(line)]
+                shown = ", ".join(str(n) for n in lines[:5])
+                problems.append(
+                    f"{name}: contains {len(hits)} {label}(s) (line {shown}). "
+                    "The house voice forbids them in the reader-facing "
+                    "documents."
+                )
+        lowered = text.lower()
+        for label, pattern in BANNED_PHRASES:
+            if re.search(pattern, lowered):
+                problems.append(
+                    f"{name}: contains the phrase {label!r}, which the house "
+                    "voice forbids."
+                )
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit documentation claims against the code.")
     parser.add_argument("--file", action="append", default=None,
@@ -662,6 +733,20 @@ def main(argv: list[str] | None = None) -> int:
 
     print()
     print("=" * 70)
+    print("D9  the house voice")
+    print("=" * 70)
+    print(f"  scope: {', '.join(TONE_SCOPE)} (the entry point; the technical")
+    print("  references are written for a reader already in the code)")
+    tone_problems = check_tone(texts)
+    if tone_problems:
+        for p in tone_problems:
+            print(f"  FAIL  {p}")
+    else:
+        print("  PASS  no em-dashes, no emoji, no engagement bait in the "
+              "reader-facing documents")
+
+    print()
+    print("=" * 70)
     print("D8  the defect ledger")
     print("=" * 70)
     ledger_problems = check_ledger(texts)
@@ -682,9 +767,10 @@ def main(argv: list[str] | None = None) -> int:
                f"{len(number_problems)} number(s) to review, "
                f"{len(test_problems)} test-count mismatch(es), "
                f"{len(ledger_problems)} ledger problem(s), "
+               f"{len(tone_problems)} voice problem(s), "
                f"{len(DESK_FAILURES)} desk-run failure(s)")
-    if (path_problems or test_problems or ledger_problems or DESK_FAILURES
-            or (args.strict and number_problems)):
+    if (path_problems or test_problems or ledger_problems or tone_problems
+            or DESK_FAILURES or (args.strict and number_problems)):
         print(f"RESULT: {verdict}")
         return 1
     print(f"RESULT: {verdict}")

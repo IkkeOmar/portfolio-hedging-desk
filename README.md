@@ -86,7 +86,7 @@ the Judge seat's verdict, and the Judge is **deterministic by default**. When
 it is backed by a language model, the model's entire output is one opinion:
 approve or reject, a score, and reasons. It never chooses a hedge ratio,
 never sizes a position, never relaxes a risk limit, and never decides
-whether the strategy worked — that last question belongs to the gate stack,
+whether the strategy worked. That last question belongs to the gate stack,
 which is arithmetic. A model is good at forming an opinion and bad at being
 trusted with a number that compounds, so it gets the opinion and nothing
 else.
@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 python scripts/run_desk.py      # one trading day, five seats, a journal
 python scripts/backtest.py      # 15 years, walk-forward, the four gates
-python -m pytest tests/ -q      # 99 tests
+python -m pytest tests/ -q      # 103 tests
 ```
 
 **New here?** [`GUIDE.md`](GUIDE.md) is the map: the architecture in one
@@ -147,7 +147,7 @@ entire reason the Scan seat exists.
 ## The dashboard
 
 There is a local web dashboard, if you would rather look at the desk than
-read its output. It shows the same report the CLI writes — it does not
+read its output. It shows the same report the CLI writes. It does not
 compute anything of its own.
 
 ```bash
@@ -181,7 +181,7 @@ Six tabs:
 
 | Tab | What is in it |
 |---|---|
-| **Overview** | The verdict banner, the four headline numbers against the unhedged portfolio, the equity curve, and all four gates — including the two that never ran, marked *not reached* |
+| **Overview** | The verdict banner, the four headline numbers against the unhedged portfolio, the equity curve, and all four gates, including the two that never ran, marked *not reached* |
 | **Risk** | The equity curve on a log scale, the underwater drawdown plot, and the dial over time |
 | **Desk** | One trading day replayed seat by seat, with the judge's votes |
 | **Vetoes & trades** | Every refusal with its reason, and what the hedging cost |
@@ -216,15 +216,15 @@ worked is decided by the gates, which are arithmetic too.
 Two layers, because one cannot cover the other:
 
 - `tests/test_dashboard.py` drives the app with Streamlit's own harness
-  and *interacts with it* — clicks the buttons, flips the switches,
+  and *interacts with it*: clicks the buttons, flips the switches,
   changes the trading day, types a key, and checks that the key never
   reaches the rendered page.
 - `tests/test_dashboard_browser.py` starts a real Streamlit server and
   drives it with a real browser: it clicks every tab, every switch, the
   provider dropdown and the connection-test button.
 
-Streamlit's harness cannot click a tab — a tab is a container, not a
-widget — so tab navigation is only testable in a browser. Both layers run
+Streamlit's harness cannot click a tab. A tab is a container, not a
+widget, so tab navigation is only testable in a browser. Both layers run
 in CI.
 
 ## The honest result
@@ -317,7 +317,7 @@ Everything below is a real limitation, not a disclaimer paragraph.
 - **Survivorship bias, stated plainly.** The bundled fixture names four
   tickers that all exist today and all worked. Nothing in this repository
   can tell you what the result looks like on a universe that included the
-  failures — a delisting, a near-collapse, a business that stopped being a
+  failures: a delisting, a near-collapse, a business that stopped being a
   good idea. So R² 58.5% is a fact about **this portfolio**, not about
   hedges in general, and the gates would be re-run on the same survivors and
   would look just as good.
@@ -362,7 +362,7 @@ The point of publishing the numbers is that you can check them.
 
 - Every figure in this README comes from `reports/evaluation.json`, produced
   by `python scripts/backtest.py`. Re-run it and compare.
-- **99 tests** (62 run on the base install; 37 more need the optional
+- **103 tests** (66 run on the base install; 37 more need the optional
   dashboard extra and skip without it), each cross-validated against an
   *independent* library or
   solver rather than a second implementation of our own code: Deflated
@@ -397,17 +397,17 @@ The point of publishing the numbers is that you can check them.
 - **The mistakes are published too**, in
   [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md): every defect that was in
   this code, each with its mechanism, why the wrong answer looked
-  plausible, and how it was caught. The mistakes are the credibility — a
+  plausible, and how it was caught. The mistakes are the credibility: a
   system that cannot show its work has no business auditing anyone else's.
 
 ## Further reading
 
-- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — how the desk decides, and how
+- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md): how the desk decides, and how
   we know whether it is right.
-- [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md) — the bugs that were in this
+- [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md): the bugs that were in this
   code, and how each one was caught.
 - [`notes/2026-10-24-verified-citations.md`](notes/2026-10-24-verified-citations.md)
-  — every citation, resolved, with the ones we found that do not exist.
+  Every citation, resolved, with the ones we found that do not exist.
 
 ---
 
@@ -430,7 +430,7 @@ works* (the other one).
 ## Where to take this next
 
 This is a **starting point**, not a finished product. The desk is finished
-as an *instrument* — five seats, a journal, one veto, four gates — and it
+as an *instrument*: five seats, a journal, one veto, four gates. And it
 is not finished as a research programme. There is one data source, one
 universe, and one family of thresholds. The seams are real, and each one
 is a place to change the code:

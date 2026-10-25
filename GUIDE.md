@@ -1,4 +1,4 @@
-# Guide — start here
+# Guide: start here
 
 This repository is a **portfolio hedging desk** you can run, read, break and
 extend. It takes a portfolio of holdings, decides how much of a market index
@@ -33,9 +33,9 @@ The evidence, so you do not have to take it on trust:
 | The Judge is the only thing that can call a model | `src/policy/judge.py` is the only file in `src/` that mentions a chat endpoint or an API key |
 | The default judge is deterministic | `src/backtest.py` and `src/desk.py` both construct `RuleBasedJudge`, not `LLMJudge` |
 | The model's output is an opinion | `LLMJudge._SYSTEM` asks for one JSON object: a verdict, a score and reasons |
-| The hedge ratio and size are not the model's | `src/policy/hedger.py` — the Hedger seat, pure arithmetic |
-| The risk limits are not the model's | `src/policy/risk.py` — the Risk seat, the only veto and the only signature |
-| Whether the strategy worked is arithmetic | `src/evaluation/gates.py` — four gates, no model |
+| The hedge ratio and size are not the model's | `src/policy/hedger.py`, the Hedger seat, pure arithmetic |
+| The risk limits are not the model's | `src/policy/risk.py`, the Risk seat, the only veto and the only signature |
+| Whether the strategy worked is arithmetic | `src/evaluation/gates.py`, four gates, no model |
 
 This split is the point of the project. A language model is good at forming
 an opinion and bad at being trusted with a number that compounds. So it gets
@@ -102,7 +102,7 @@ otherwise.
    otherwise.
 2. **Open the Desk tab and press "Run this day".** The five seats run for
    one real trading day and you see what each of them said, plus the
-   judge's three votes. Then flip "Use an LLM judge" — without a key it
+   judge's three votes. Then flip "Use an LLM judge"; without a key it
    tells you so rather than failing quietly.
 3. **Open the sidebar and press "Test" with a key.** It makes one small
    call to the provider and tells you whether the key, the endpoint and
@@ -138,7 +138,7 @@ A hedge is a **trade in risk, not a trade in profit.**
 
 That sounds obvious and it changes the design, because it makes the usual
 backtest gates wrong. A perfect hedge has **zero forward-return correlation
-by construction** — if the hedge removes exactly the risk you were worried
+by construction**: if the hedge removes exactly the risk you were worried
 about, the hedged portfolio is uncorrelated with what you hedged, on
 purpose. So a return-based information gate rejects the best possible hedge
 and passes a useless one. The gates here were rebuilt around risk reduction
@@ -184,14 +184,14 @@ MIN_VOL_IC_TSTAT = 1.96
 
 Set `MIN_R_SQUARED = 0.60` and re-run the backtest. Gate 1 now fails, the
 stack short-circuits earlier, and the report says so. Thresholds are
-policy, not physics — which is exactly why they live in one visible place.
+policy, not physics. That is exactly why they live in one visible place.
 
 ### 4. Change what you hedge against
 
 In `examples/holdings.example.yaml`, change `hedging.hedge_instrument` and
 the benchmark, then re-run the backtest and compare R². This is the fastest
 way to see that **the R² is a fact about a portfolio, not about hedges in
-general** — which is the point of the next item.
+general**, which is the point of the next item.
 
 ### 5. Read the survivorship bias caveat
 
@@ -225,7 +225,7 @@ symbol. See `src/data/csv_source.py` for the exact shape, and
 `examples/prices_sample.csv` for a working example (the bundled fixture's
 last three years, so you can see the format without inventing data).
 
-**This is the step that takes you off the synthetic fixture** — and it is
+**This is the step that takes you off the synthetic fixture**, and it is
 where you should start asking whether the universe you picked would have
 survived. Put your own tickers in a CSV, point `data.path` at it, and run
 the backtest. The gates will tell you what your portfolio looks like; they
@@ -257,7 +257,7 @@ produces it" is kept honest rather than merely stated.
 | The mistakes we made and fixed | [`notes/KNOWN-TRAPS.md`](notes/KNOWN-TRAPS.md) |
 | How to extend it | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | What we will not claim | [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §7 |
-| The paper this is built on | Healy & Lo (2010), DOI `10.1515/9781400835812.303` — [free PDF](https://web.mit.edu/Alo/www/Papers/gates.pdf) |
+| The paper this is built on | Healy & Lo (2010), DOI `10.1515/9781400835812.303`, [free PDF](https://web.mit.edu/Alo/www/Papers/gates.pdf) |
 
 ## Licence
 

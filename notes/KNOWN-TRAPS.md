@@ -756,3 +756,60 @@ the same scale, and a metric that claims to describe how exposed
 something is to a market must contain the market's volatility. Ask what
 the number does when the world changes; if the answer is "nothing", the
 number is missing its input.
+
+## 34. A CI job that installed ">= the floor", and so could not see it
+
+```
+python -m pip install "streamlit>=1.55.0" "plotly>=5.20" playwright
+```
+
+The dashboard job's job is to answer one question: **does the app work on
+the oldest Streamlit this repository claims to support?** A `>=` bound
+installs the NEWEST Streamlit, so the job answered a different question
+-- does the app work on the newest Streamlit -- which the job was always
+going to pass.
+
+The bug this was written for is exactly the one a `>=` bound cannot see.
+The declared floor was `>=1.40`, and `st.button(width=...)` first exists
+in 1.49.0. On any version below that the dashboard raised `TypeError`, and
+the six theme options `baseFontSize`, `baseFontWeight`,
+`metricValueFontSize`, `showSidebarBorder`, `theme.light` and `theme.dark`
+were rejected by the config parser. A CI job installing the newest
+Streamlit sees a working dashboard every single time, and says nothing
+about the readers who are actually broken.
+
+**Impact:** high, and invisible. The class of bug is a floor that is
+below the feature, which is precisely what a floor is supposed to
+prevent.
+
+**Status:** fixed.
+
+**Fix:** the job installs the floor exactly.
+
+```
+python -m pip install "streamlit==1.55.0" "plotly>=5.20" playwright
+```
+
+1.55.0 is the floor because it is the first version that accepts
+`theme.metricValueFontSize` (rejected through 1.54.0), and it has
+`st.button(width=...)` (1.49.0) and `st.plotly_chart(width=...)`
+(1.51.0). The dashboard ALSO feature-detects `width` at runtime, so a
+reader on an older Streamlit gets the app instead of a `TypeError` --
+but the floor is what CI tests against, and the shim is what keeps old
+readers working. Both are needed; neither substitutes for the other.
+
+**Why it was plausible:** `>=` is the conventional way to write a floor,
+and it is what `pyproject.toml` correctly says. But a *declared
+dependency* and a *tested version* are different claims, and only the
+second one can catch a bug. The floor in `pyproject.toml` is a promise
+to readers; the version in CI is the promise to ourselves.
+
+**How it was caught:** by reading the CI file against the requirement,
+after the floor itself had been raised. The floor was raised and the
+defect stayed, because the check that was supposed to confirm the floor
+was not checking it.
+
+**The rule:** a floor that nothing installs is a comment. If the whole
+point of the floor is to catch an incompatible feature, then the test
+environment must BE the floor -- not "at least the floor", which is the
+newest thing available and therefore always passes.
