@@ -644,6 +644,54 @@ def check_tone(texts: dict[str, str]) -> list[str]:
     return problems
 
 
+# GOAL.md section 2, D18:
+#
+#   "each README carries a 'Where to take this next' section naming >= 3
+#    extension points, and every path it names must resolve on disk. A
+#    seam promised in prose but absent in code is a broken promise."
+#
+# The general path check resolves a bare filename by searching the tree,
+# which is right for prose ("`backtest.py` writes..."). It is NOT right
+# here: an extension point is a PROMISE about a specific file, so the
+# path has to be the one that exists. "csv_source.py" could be a file
+# anywhere; "src/data/csv_source.py" is a specific promise.
+EXTENSION_SECTION = "## Where to take this next"
+
+
+def check_extension_points(text: dict[str, str]) -> list[str]:
+    """Every path named as an extension point must resolve as written."""
+    problems: list[str] = []
+    for label, body in text.items():
+        start = body.find(EXTENSION_SECTION)
+        if start == -1:
+            problems.append(
+                f"{label}: has no '{EXTENSION_SECTION}' section, so it does "
+                "not say where a reader would take it next"
+            )
+            continue
+        end = body.find("\n## ", start + len(EXTENSION_SECTION))
+        section = body[start:end if end != -1 else len(body)]
+
+        # The paths in the seam table: the "Where" column.
+        paths = sorted(set(re.findall(r"`([A-Za-z_][\w/]*\.py)`", section)))
+        paths += sorted(set(re.findall(r"`([A-Za-z_][\w/]*/)`", section)))
+        paths = sorted(set(paths))
+        if len(paths) < 3:
+            problems.append(
+                f"{label}: the '{EXTENSION_SECTION}' section names "
+                f"{len(paths)} path(s); at least 3 extension points are "
+                "required"
+            )
+        for path in paths:
+            if not (REPO / path).exists():
+                problems.append(
+                    f"{label}: the '{EXTENSION_SECTION}' section names "
+                    f"'{path}', which does not exist on disk. A seam promised "
+                    "in prose but absent in code is a broken promise."
+                )
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit documentation claims against the code.")
     parser.add_argument("--file", action="append", default=None,
@@ -747,6 +795,18 @@ def main(argv: list[str] | None = None) -> int:
 
     print()
     print("=" * 70)
+    print("D18  the extension points")
+    print("=" * 70)
+    ext_problems = check_extension_points({"README.md": texts["README.md"]})
+    if ext_problems:
+        for p in ext_problems:
+            print(f"  FAIL  {p}")
+    else:
+        print("  PASS  the README names its extension points and every path "
+              "resolves")
+
+    print()
+    print("=" * 70)
     print("D8  the defect ledger")
     print("=" * 70)
     ledger_problems = check_ledger(texts)
@@ -768,9 +828,11 @@ def main(argv: list[str] | None = None) -> int:
                f"{len(test_problems)} test-count mismatch(es), "
                f"{len(ledger_problems)} ledger problem(s), "
                f"{len(tone_problems)} voice problem(s), "
+               f"{len(ext_problems)} extension-point problem(s), "
                f"{len(DESK_FAILURES)} desk-run failure(s)")
     if (path_problems or test_problems or ledger_problems or tone_problems
-            or DESK_FAILURES or (args.strict and number_problems)):
+            or ext_problems or DESK_FAILURES
+            or (args.strict and number_problems)):
         print(f"RESULT: {verdict}")
         return 1
     print(f"RESULT: {verdict}")

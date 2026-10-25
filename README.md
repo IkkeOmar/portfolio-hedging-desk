@@ -439,7 +439,7 @@ is a place to change the code:
 |---|---|---|
 | **The seat protocol** | `src/desk.py` | Add a seat, or replace one. The protocol is: propose, then a single Risk signature, or nothing trades. |
 | **The gate thresholds** | `src/evaluation/gates.py` | Change what counts as a hedge worth holding. Every threshold is a measured quantity, not a round number. |
-| **The data source** | `src/data/` | Point it at your own prices. `csv_source.py` reads a CSV; `synthetic.py` makes the fixture. |
+| **The data source** | `src/data/` | Point it at your own prices. `src/data/csv_source.py` reads a CSV; `src/data/synthetic.py` makes the fixture. |
 | **The benchmark set** | `src/evaluation/metrics.py` | Add the simple alternative your strategy has to beat. |
 
 What you may **not** do with it: turn it into a signal generator, weaken a
