@@ -117,7 +117,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: IkkeOmar/hedging-agent-public
-          ref: fd6fcebd737024b8eee6d22b6152f7b421285b3e
+          ref: cb0b2802f974f20ecb2840b8746dac9ac4bc29dc
           path: .lab
 
       - name: Audit the thread against both repositories
