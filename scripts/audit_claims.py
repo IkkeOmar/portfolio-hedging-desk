@@ -402,7 +402,17 @@ def harvest_known() -> dict[str, list[str]]:
 
     # The audit notes: numbers that are established facts about the original
     # repo, quoted in the README. They are verified by the audit, not by a run.
+    #
+    # The thread is EXCLUDED, and the exclusion is deliberate. The thread
+    # quotes numbers from BOTH repositories, and it is checked by its own
+    # script (scripts/audit_thread.py) against the artefacts that produced
+    # them. If it were harvested here, those numbers would become sources
+    # for the README's own numeric screen -- so a number could end up
+    # "verified" by quoting a document that quotes it. A checker that
+    # accepts a file for the same claim it makes is not checking anything.
     for note in sorted((REPO / "notes").glob("*.md")):
+        if note.name == "2026-10-25-x-thread.md":
+            continue
         try:
             body = note.read_text(encoding="utf-8")
         except OSError:
@@ -692,6 +702,75 @@ def check_extension_points(text: dict[str, str]) -> list[str]:
     return problems
 
 
+def check_the_desk_did_work(report_path: Path) -> tuple[list[str], list[str]]:
+    """Did the desk actually DO anything, or did it fail quietly?
+
+    The gates cannot answer this. A seat that raises on every call is
+    swallowed, recorded as a veto, and the run continues -- which produces
+    the SAME gates, the SAME verdict and the SAME R^2 as a healthy run,
+    because those come from the hedging equation and not from the seats.
+    The only things that differ are the ones the run swallowed:
+
+        a healthy run   n_seat_errors 0, n_trades 121
+        a crashed run   n_seat_errors 172, n_trades 0
+
+    and the report publishes both. So the report can say "hedgeability
+    passes" while the scan seat failed on every single day. That is
+    exactly the failure the backtest's own docstring warns about: "a
+    desk that quietly does nothing looks exactly like a desk that has
+    nothing to do". The desk keeps the failures so they can be told
+    apart; this check is what tells them apart.
+
+    Returns (problems, notes).
+    """
+    problems: list[str] = []
+    notes: list[str] = []
+
+    if not report_path.exists():
+        return problems, notes
+
+    data = json.loads(report_path.read_text(encoding="utf-8"))
+    summary = data.get("summary") or {}
+
+    seat_errors = summary.get("n_seat_errors")
+    signal_errors = summary.get("n_signal_errors")
+    n_trades = summary.get("n_trades")
+
+    for label, value in (("seat", seat_errors), ("signal", signal_errors)):
+        if value is None:
+            problems.append(
+                f"the report does not publish n_{label}_errors, so a seat "
+                f"that fails on every call cannot be told apart from a "
+                f"healthy run"
+            )
+        elif value:
+            problems.append(
+                f"the report records {value} {label} error(s): a seat "
+                f"raised during the run. The gates and the verdict are "
+                f"computed from the hedging equation, not from the seats, "
+                f"so they look the same whether the desk worked or whether "
+                f"it failed quietly on every day. The published numbers "
+                f"describe a broken run."
+            )
+
+    if n_trades is None:
+        problems.append("the report does not publish n_trades")
+    elif n_trades == 0:
+        problems.append(
+            "the report records 0 trades. A run that places no trades and "
+            "a run that was told to place none produce the same R^2 and "
+            "the same gates, so the report cannot be read as evidence "
+            "that the desk works."
+        )
+    else:
+        notes.append(
+            f"{n_trades} trade(s) placed, no seat or signal errors: the "
+            f"report describes a run that actually did something"
+        )
+
+    return problems, notes
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit documentation claims against the code.")
     parser.add_argument("--file", action="append", default=None,
@@ -817,6 +896,21 @@ def main(argv: list[str] | None = None) -> int:
         print("  PASS  the ledger's entry count matches what the documents claim")
 
     print()
+    print("=" * 70)
+    print("D10  the desk actually did something")
+    print("=" * 70)
+    work_report = Path(args.report) if args.report else REPO / "reports" / "evaluation.json"
+    work_problems, work_notes = check_the_desk_did_work(work_report)
+    for n in work_notes:
+        print(f"  NOTE  {n}")
+    if work_problems:
+        for p in work_problems:
+            print(f"  FAIL  {p}")
+    else:
+        print("  PASS  the report shows a run that placed trades and raised "
+              "no seat or signal errors")
+
+    print()
     if DESK_FAILURES:
         for f in DESK_FAILURES:
             print(f"  FAIL  {f}")
@@ -829,9 +923,10 @@ def main(argv: list[str] | None = None) -> int:
                f"{len(ledger_problems)} ledger problem(s), "
                f"{len(tone_problems)} voice problem(s), "
                f"{len(ext_problems)} extension-point problem(s), "
+               f"{len(work_problems)} did-not-work problem(s), "
                f"{len(DESK_FAILURES)} desk-run failure(s)")
     if (path_problems or test_problems or ledger_problems or tone_problems
-            or ext_problems or DESK_FAILURES
+            or ext_problems or DESK_FAILURES or work_problems
             or (args.strict and number_problems)):
         print(f"RESULT: {verdict}")
         return 1

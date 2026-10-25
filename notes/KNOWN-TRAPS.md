@@ -857,3 +857,70 @@ checking the file, not the code.* If the artefact can drift, the check
 has to regenerate it. And when two things share names but measure
 different things, the fix is to run the same experiment twice, not to
 find a field where they happen to agree.
+
+## 36. A seat that failed on every day, behind a report that said it passed
+
+The desk swallows exceptions from its seats. A seat that raises is
+recorded as a veto, the run continues, and the report is written anyway.
+That is deliberate: a partial answer with an error log beats a crash.
+
+But the gates cannot see it. The gates are computed from the hedging
+equation, not from the seats, so a run in which the scan seat raised on
+EVERY day produces:
+
+    the same gates      hedgeability True, regime_information False
+    the same verdict    False
+    the same R^2        0.5850042453516432
+
+The only things that differ are the two the run swallowed:
+
+    n_seat_errors  172 instead of 0
+    n_trades         0 instead of 121
+
+And the audit checked neither. `reports/evaluation.json` published
+`n_seat_errors: 0` and the claim audit never looked at it, so a report
+describing a desk that did nothing at all passed every check.
+
+**Impact:** high, and invisible. The whole promise of this repository is
+that the published numbers can be checked. A report that says "the
+hedgeability gate passes" while the seat that does the hedging was
+raising 172 times is not a number anyone can check, and nothing in the
+tooling noticed.
+
+**Why it was plausible:** the gates and the verdict are the interesting
+outputs, so they are what the checks looked at. And the report already
+carried the counters -- `n_seat_errors` and `n_signal_errors` were in
+`summary`, published on every run. The backtest's own docstring says
+why they are there: "a desk that quietly does nothing looks exactly
+like a desk that has nothing to do, and the only way to tell them apart
+is to keep the failures". The desk kept the failures. Nothing read them.
+
+**How it was caught:** by making the scan seat raise on every call and
+comparing the two reports field by field. The gates, the verdict and the
+R^2 were identical. Only `n_seat_errors` and `n_trades` differed. The
+crash signature was reproduced exactly, which is what identified it as a
+seat failure rather than a change in the numbers.
+
+**Fix.** The audit now has a check, D10, that asks a different question
+from every other one: did the desk actually DO anything?
+
+    FAIL  the report records 172 seat error(s): a seat raised during the
+    run. The gates and the verdict are computed from the hedging
+    equation, not from the seats, so they look the same whether the desk
+    worked or whether it failed quietly on every day. The published
+    numbers describe a broken run.
+
+It also fails a report that records 0 trades, and a report that does not
+publish the counters at all -- because a report that omits them cannot
+be distinguished from a working one.
+
+**Proved by breaking it:** the committed report passes; a copy with
+`n_seat_errors` set to 172 and `n_trades` to 0 fails with both messages.
+`tests/test_did_work.py` pins all five cases.
+
+**The rule:** *a verdict computed from one part of a system says nothing
+about the parts it does not read.* Every check here asked about the
+gates, the numbers, the paths, the voice. None of them asked whether
+the machine ran. A check that cannot fail is not a check, and the
+strongest form of that is a report that is indistinguishable between
+working and broken.

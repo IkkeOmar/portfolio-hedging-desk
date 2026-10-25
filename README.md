@@ -115,7 +115,7 @@ pip install -r requirements.txt
 
 python scripts/run_desk.py      # one trading day, five seats, a journal
 python scripts/backtest.py      # 15 years, walk-forward, the four gates
-python -m pytest tests/ -q      # 103 tests
+python -m pytest tests/ -q      # 109 tests
 ```
 
 **New here?** [`GUIDE.md`](GUIDE.md) is the map: the architecture in one
@@ -362,7 +362,7 @@ The point of publishing the numbers is that you can check them.
 
 - Every figure in this README comes from `reports/evaluation.json`, produced
   by `python scripts/backtest.py`. Re-run it and compare.
-- **103 tests** (66 run on the base install; 37 more need the optional
+- **109 tests** (72 run on the base install; 37 more need the optional
   dashboard extra and skip without it), each cross-validated against an
   *independent* library or
   solver rather than a second implementation of our own code: Deflated
@@ -418,7 +418,7 @@ anything to hedge, does the timing signal exist, did the reduction pay for
 itself, and does it hold up out of sample?
 
 The **research side** lives in
-[`hedging-agent`](https://github.com/IkkeOmar/hedging-agent): it drafts
+[`hedging-agent`](https://github.com/IkkeOmar/hedging-agent-public): it drafts
 candidate hedge strategies, searches for the best of many, and refuses to
 promote any of them that does not clear a fail-closed gate. Right now it
 rejects every universe it tests, and it publishes which checks failed.
