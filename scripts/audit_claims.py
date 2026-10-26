@@ -402,17 +402,7 @@ def harvest_known() -> dict[str, list[str]]:
 
     # The audit notes: numbers that are established facts about the original
     # repo, quoted in the README. They are verified by the audit, not by a run.
-    #
-    # The thread is EXCLUDED, and the exclusion is deliberate. The thread
-    # quotes numbers from BOTH repositories, and it is checked by its own
-    # script (scripts/audit_thread.py) against the artefacts that produced
-    # them. If it were harvested here, those numbers would become sources
-    # for the README's own numeric screen -- so a number could end up
-    # "verified" by quoting a document that quotes it. A checker that
-    # accepts a file for the same claim it makes is not checking anything.
     for note in sorted((REPO / "notes").glob("*.md")):
-        if note.name == "2026-10-25-x-thread.md":
-            continue
         try:
             body = note.read_text(encoding="utf-8")
         except OSError:

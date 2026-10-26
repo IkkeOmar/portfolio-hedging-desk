@@ -64,7 +64,6 @@ default data source is the repository's own synthetic fixture.
 | The full evaluation, machine-readable | `python scripts/backtest.py --json` | same, plus JSON on **stdout** | **1** |
 | The test suite | `python -m pytest tests/ -q` | nothing | 0 if green |
 | Audit the documented claims | `python scripts/audit_claims.py` | nothing | 0 if clean, 1 if not |
-| Audit the thread | `python scripts/audit_thread.py --lab-repo <path>` | nothing | 0 if clean, 1 if not |
 | The dashboard | `streamlit run dashboard/app.py` | nothing | serves on :8501 |
 
 ### Exit codes
@@ -225,7 +224,6 @@ next"**, and the claim audit checks that the two lists agree.
 | A documented number | Re-run the command that produces it. A number no command produces rots in silence. |
 | The test suite | Update every "N tests" claim. `scripts/audit_claims.py` counts what pytest collects and fails on a mismatch. |
 | The defect ledger | Update the count in the documents. The audit counts the ledger's entries, in digits **and** in words. |
-| The thread (`notes/2026-10-25-x-thread.md`) | Re-run `scripts/audit_thread.py`. It checks every number in the thread against the artefacts that produced them. |
 
 ---
 
